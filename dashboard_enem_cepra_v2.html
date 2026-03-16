@@ -1,0 +1,3269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard ENEM — CEPRA 3ª Série</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f3ef;
+    --surface: #ffffff;
+    --surface2: #f0ede7;
+    --ink: #1a1814;
+    --ink2: #6b6660;
+    --ink3: #a09b96;
+    --accent: #c8440a;
+    --accent2: #e8a87c;
+    --teal: #1a6b6b;
+    --teal2: #d0eeee;
+    --gold: #b8860b;
+    --gold2: #fef3d0;
+    --border: #ddd9d3;
+    --danger: #c8440a;
+    --success: #1a6b6b;
+    --warn: #b8860b;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* PRINT */
+  @media print {
+    body { background: white; font-size: 12px; }
+    .no-print { display: none !important; }
+    .page-break { page-break-before: always; }
+    .section { break-inside: avoid; }
+    .grid-3, .grid-2 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--ink);
+    color: white;
+    padding: 32px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .header-left h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .header-left p {
+    color: #a09b96;
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 300;
+  }
+  .header-right {
+    text-align: right;
+  }
+  .simulado-badge {
+    background: var(--accent);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: inline-block;
+  }
+  .header-right p { color: #7a7470; font-size: 12px; }
+
+  /* NAV / SELECTOR */
+  .nav-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-tab {
+    padding: 16px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .nav-tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+  .nav-tab:hover { color: var(--ink2); }
+
+  .student-select-wrap {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+  }
+  .student-select-wrap label { font-size: 12px; color: var(--ink3); white-space: nowrap; }
+  select {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 6px 28px 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--bg);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236b6660' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    min-width: 220px;
+  }
+
+  /* CONTENT */
+  .content { padding: 40px 48px; max-width: 1200px; margin: 0 auto; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    font-weight: 400;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .section-sub {
+    font-size: 13px;
+    color: var(--ink3);
+    margin-bottom: 24px;
+  }
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+
+  /* METRIC CARDS */
+  .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 32px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
+  .grid-1 { margin-bottom: 32px; }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .metric-card.accent { border-left: 3px solid var(--accent); }
+  .metric-card.teal { border-left: 3px solid var(--teal); }
+  .metric-card.gold { border-left: 3px solid var(--gold); }
+  .metric-card.warn { border-left: 3px solid var(--danger); background: #fff9f7; }
+
+  .metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 8px;
+  }
+  .metric-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .metric-value.big { font-size: 36px; }
+  .metric-sub {
+    font-size: 12px;
+    color: var(--ink3);
+    margin-top: 4px;
+  }
+  .metric-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    margin-top: 6px;
+  }
+  .badge-danger { background: #fde8e0; color: var(--accent); }
+  .badge-ok { background: var(--teal2); color: var(--teal); }
+  .badge-warn { background: var(--gold2); color: var(--gold); }
+
+  /* CHART CARDS */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .chart-desc {
+    font-size: 12px;
+    color: var(--ink3);
+    margin-bottom: 20px;
+  }
+  .chart-wrap { position: relative; }
+
+  /* RANKING TABLE */
+  .ranking-table { width: 100%; border-collapse: collapse; }
+  .ranking-table th {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--ink3);
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .ranking-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid #f0ede7;
+    vertical-align: middle;
+  }
+  .ranking-table tr:last-child td { border-bottom: none; }
+  .ranking-table tr:hover td { background: var(--bg); }
+  .rank-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    color: var(--ink3);
+    width: 32px;
+    display: inline-block;
+    text-align: right;
+  }
+  .rank-num.top3 { color: var(--accent); }
+  .aluno-name { font-weight: 500; }
+  .tri-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .tri-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--accent);
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+  .tri-num { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .area-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #fde8e0;
+    color: var(--accent);
+    display: inline-block;
+  }
+  .area-tag.ok { background: var(--teal2); color: var(--teal); }
+
+  /* INSIGHT BOX */
+  .insight-box {
+    background: var(--gold2);
+    border: 1px solid #e8d080;
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .insight-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .insight-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .insight-text { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+
+  .alert-box {
+    background: #fff9f7;
+    border: 1px solid #f5c4aa;
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  /* STUDENT PROFILE */
+  .student-header {
+    background: var(--ink);
+    color: white;
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .student-initial {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: white;
+    flex-shrink: 0;
+    margin-right: 20px;
+  }
+  .student-info { flex: 1; }
+  .student-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.1;
+  }
+  .student-meta { font-size: 13px; color: #a09b96; margin-top: 4px; }
+  .student-ranks { display: flex; gap: 32px; }
+  .rank-item { text-align: center; }
+  .rank-item-label { font-size: 11px; color: #7a7470; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .rank-item-value { font-family: 'DM Serif Display', serif; font-size: 28px; color: white; line-height: 1; }
+  .rank-item-value.highlight { color: var(--accent2); }
+
+  /* AREA BARS (student view) */
+  .area-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .area-label { font-size: 12px; font-weight: 600; color: var(--ink2); width: 34px; text-align: right; flex-shrink: 0; }
+  .area-bar-outer {
+    flex: 1;
+    height: 24px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .area-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    transition: width 0.6s ease;
+    position: relative;
+  }
+  .area-bar-meta-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--ink);
+    opacity: 0.3;
+  }
+  .area-extra { font-size: 12px; color: var(--ink3); width: 100px; flex-shrink: 0; }
+
+  /* COMPETENCIAS GRID */
+  .comp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 16px; }
+  .comp-item {
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .comp-num { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--ink); }
+  .comp-label { font-size: 11px; color: var(--ink3); margin-top: 4px; }
+  .comp-bar { height: 4px; border-radius: 2px; margin-top: 8px; }
+
+  /* META SIMULATOR */
+  .meta-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .meta-input-row { display: flex; gap: 16px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
+  .meta-field { display: flex; flex-direction: column; gap: 6px; }
+  .meta-field label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink3); }
+  .meta-field input {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--bg);
+    width: 120px;
+  }
+  .btn-calcular {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 9px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-calcular:hover { background: #a83608; }
+
+  .gap-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 16px; }
+  .gap-item {
+    border-radius: var(--radius-sm);
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .gap-item.positivo { background: var(--teal2); }
+  .gap-item.negativo { background: #fde8e0; }
+  .gap-value { font-family: 'DM Serif Display', serif; font-size: 22px; }
+  .gap-value.pos { color: var(--teal); }
+  .gap-value.neg { color: var(--accent); }
+  .gap-label { font-size: 11px; color: var(--ink3); margin-top: 4px; }
+
+  /* PRINT FOOTER */
+  .print-footer {
+    display: none;
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink3);
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 32px;
+  }
+  @media print { .print-footer { display: block; } }
+
+  .btn-print {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--ink);
+    margin-left: 8px;
+    transition: background 0.15s;
+  }
+  .btn-print:hover { background: var(--bg); }
+
+  /* SCORE DE RISCO */
+  .score-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .score-gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .score-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 72px; line-height: 1;
+    font-weight: 400;
+  }
+  .score-label { font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
+  .score-bar-outer {
+    width: 100%; height: 10px;
+    background: linear-gradient(to right, #1a6b6b 0%, #4a6fa5 25%, #b8860b 55%, #c8440a 80%, #8b0000 100%);
+    border-radius: 5px; position: relative; margin-top: 4px;
+  }
+  .score-needle {
+    position: absolute; top: -4px;
+    width: 3px; height: 18px;
+    background: var(--ink); border-radius: 2px;
+    transform: translateX(-50%);
+    transition: left 0.6s ease;
+  }
+  .score-components { display: flex; flex-direction: column; gap: 10px; }
+  .score-comp-row { display: flex; align-items: center; gap: 10px; }
+  .score-comp-label { font-size: 12px; color: var(--ink2); width: 180px; flex-shrink: 0; }
+  .score-comp-bar-outer { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .score-comp-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+  .score-comp-val { font-size: 12px; font-weight: 600; color: var(--ink); width: 28px; text-align: right; flex-shrink: 0; }
+
+  /* EFICIÊNCIA TRI */
+  .efic-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .efic-label { font-size: 12px; font-weight: 700; color: var(--ink2); width: 34px; text-align: right; flex-shrink: 0; }
+  .efic-track {
+    flex: 1; height: 28px; background: var(--surface2);
+    border-radius: 4px; position: relative; overflow: hidden;
+  }
+  .efic-range {
+    position: absolute; top: 0; bottom: 0;
+    background: var(--border); border-radius: 2px;
+  }
+  .efic-med-line {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px; background: var(--ink3); opacity: 0.5;
+  }
+  .efic-dot {
+    position: absolute; top: 50%; width: 10px; height: 10px;
+    border-radius: 50%; border: 2px solid white;
+    transform: translate(-50%, -50%);
+    transition: left 0.5s ease;
+  }
+  .efic-label-inside {
+    position: absolute; top: 50%; right: 6px;
+    transform: translateY(-50%);
+    font-size: 10px; font-weight: 600; color: var(--ink3);
+  }
+  .efic-vals { font-size: 11px; color: var(--ink3); width: 130px; flex-shrink: 0; }
+  .efic-status {
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 100px; flex-shrink: 0; width: 130px; text-align: center;
+  }
+  .efic-excelente   { background: var(--teal2); color: var(--teal); }
+  .efic-acima       { background: #e8f4e8; color: #2d6a2d; }
+  .efic-abaixo-med  { background: var(--gold2); color: var(--gold); }
+  .efic-abaixo      { background: #fde8e0; color: var(--accent); }
+
+  /* PERFIL VOCACIONAL */
+  .vocacional-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-top: 8px; }
+  .vocacional-item {
+    border-radius: var(--radius-sm); padding: 12px 8px;
+    text-align: center; background: var(--surface2);
+    border: 1.5px solid transparent; transition: all 0.2s;
+  }
+  .vocacional-item.top { background: white; }
+  .vocacional-score { font-family: 'DM Serif Display', serif; font-size: 20px; line-height: 1; }
+  .vocacional-nome { font-size: 10px; font-weight: 600; margin-top: 4px; color: var(--ink2); }
+  .vocacional-cursos { font-size: 10px; color: var(--ink3); margin-top: 3px; line-height: 1.4; }
+
+  /* PRIORIDADES */
+  .prioridade-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .prioridade-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: white;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .prioridade-num.p2 { background: var(--ink2); }
+  .prioridade-num.p3 { background: var(--ink3); }
+  .prioridade-label { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+  .prioridade-detalhe { font-size: 12px; color: var(--ink3); line-height: 1.5; }
+
+  /* DROP ZONE (aba planilhas) */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 48px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: #fff9f7;
+  }
+  .drop-zone.drag-over { transform: scale(1.01); }
+  .drop-icon {
+    width: 64px; height: 64px;
+    background: #fde8e0;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .drop-text strong { font-size: 16px; color: var(--ink); display: block; margin-bottom: 4px; }
+  .drop-text span { font-size: 13px; color: var(--ink3); }
+  .drop-status {
+    font-size: 12px; font-weight: 600;
+    padding: 5px 16px; border-radius: 100px; margin-top: 4px;
+  }
+  .drop-status-idle { background: var(--surface2); color: var(--ink3); }
+  .drop-status-ok { background: var(--teal2); color: var(--teal); }
+  .drop-status-err { background: #fde8e0; color: var(--accent); }
+  .drop-status-loading { background: var(--gold2); color: var(--gold); }
+
+  /* PLANILHAS LISTA */
+  .planilha-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: border-color 0.15s;
+  }
+  .planilha-card.ativa { border-color: var(--accent); border-left: 3px solid var(--accent); }
+  .planilha-card:hover { border-color: var(--ink3); }
+  .planilha-thumb {
+    width: 48px; height: 48px;
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    background: #fde8e0;
+  }
+  .planilha-thumb.ativa-bg { background: var(--teal2); }
+  .planilha-info { flex: 1; min-width: 0; }
+  .planilha-nome { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+  .planilha-meta { font-size: 12px; color: var(--ink3); }
+  .planilha-badge {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 100px;
+    background: var(--teal2); color: var(--teal);
+    margin-left: 8px;
+  }
+  .planilha-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn-usar {
+    background: var(--accent); color: white;
+    border: none; border-radius: var(--radius-sm);
+    padding: 7px 16px; font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-usar:hover { background: #a83608; }
+  .btn-usar.usando { background: var(--teal); pointer-events: none; }
+  .btn-excluir {
+    background: var(--surface2); color: var(--ink3);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 7px 14px; font-family: 'DM Sans', sans-serif;
+    font-size: 12px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-excluir:hover { background: #fde8e0; color: var(--accent); border-color: #f5c4aa; }
+  .planilhas-empty {
+    text-align: center; padding: 32px; color: var(--ink3);
+    font-size: 14px; background: var(--surface2);
+    border-radius: var(--radius); margin-top: 8px;
+  }
+
+  /* COMPARATIVO */
+  .comp-aviso {
+    text-align: center; padding: 64px 32px;
+    background: var(--surface2); border-radius: var(--radius); margin-bottom: 24px;
+  }
+  .comp-controles {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .comp-controle-grupo { display: flex; flex-direction: column; gap: 8px; }
+  .comp-controle-titulo {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.7px; color: var(--ink3);
+  }
+  .comp-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .comp-check-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 100px;
+    border: 1.5px solid var(--border); background: var(--surface);
+    cursor: pointer; font-size: 12px; font-weight: 600;
+    color: var(--ink2); transition: all 0.15s; user-select: none;
+  }
+  .comp-check-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .comp-check-pill.checked { border-color: var(--accent); background: var(--accent); color: white; }
+  .comp-check-pill input { display: none; }
+  .comp-check-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: currentColor; flex-shrink: 0;
+  }
+  .delta-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 4px; border-bottom: 1px solid var(--surface2); font-size: 13px;
+  }
+  .delta-row:last-child { border-bottom: none; }
+  .delta-name { flex: 1; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .delta-val { font-size: 12px; color: var(--ink3); width: 48px; text-align: right; }
+  .delta-arrow { font-size: 14px; width: 24px; text-align: center; flex-shrink: 0; }
+  .delta-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px; flex-shrink: 0; }
+  .delta-up   { background: var(--teal2); color: var(--teal); }
+  .delta-down { background: #fde8e0; color: var(--accent); }
+  .delta-flat { background: var(--surface2); color: var(--ink3); }
+
+  /* ── RANKING SEMESTRAL ── */
+  .sem-aviso {
+    text-align:center; padding:40px 24px;
+    background:var(--surface2); border-radius:var(--radius);
+    margin-bottom:28px; font-size:13px; color:var(--ink3);
+  }
+  /* Pódio */
+  .podio-wrap {
+    display:grid; grid-template-columns:1fr 1fr 1fr 1fr;
+    gap:12px; margin-bottom:28px;
+  }
+  .podio-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:20px 16px;
+    text-align:center; position:relative; overflow:hidden;
+  }
+  .podio-card.ouro   { border-top:3px solid #c8a800; }
+  .podio-card.prata  { border-top:3px solid #8a9bb0; }
+  .podio-card.bronze { border-top:3px solid #b07040; }
+  .podio-card.verde  { border-top:3px solid var(--teal); }
+  .podio-medal {
+    font-size:28px; display:block; margin-bottom:6px; line-height:1;
+  }
+  .podio-categoria {
+    font-size:10px; font-weight:700; letter-spacing:0.8px;
+    text-transform:uppercase; color:var(--ink3); margin-bottom:8px;
+  }
+  .podio-nome {
+    font-family:'DM Serif Display',serif; font-size:16px;
+    color:var(--ink); line-height:1.2; margin-bottom:4px;
+  }
+  .podio-valor {
+    font-size:22px; font-weight:700; line-height:1;
+  }
+  .podio-detalhe { font-size:11px; color:var(--ink3); margin-top:4px; }
+
+  /* Selos */
+  .selos-wrap { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:28px; }
+  .selo {
+    display:flex; align-items:center; gap:6px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:100px; padding:6px 14px;
+    font-size:12px; font-weight:600; color:var(--ink2);
+  }
+  .selo-icon { font-size:14px; }
+
+  /* Tabela semestral com sparklines */
+  .sem-table { width:100%; border-collapse:collapse; }
+  .sem-table th {
+    font-size:11px; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.6px; color:var(--ink3); padding:8px 10px;
+    text-align:left; border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  .sem-table td {
+    padding:9px 10px; font-size:13px;
+    border-bottom:1px solid #f0ede7; vertical-align:middle;
+  }
+  .sem-table tr:last-child td { border-bottom:none; }
+  .sem-table tr:hover td { background:var(--bg); }
+  .sparkline-cell { width:100px; }
+  .sparkline-svg { display:block; }
+  .trend-badge {
+    display:inline-flex; align-items:center; gap:3px;
+    font-size:11px; font-weight:700; padding:2px 7px;
+    border-radius:100px;
+  }
+  .trend-up     { background:var(--teal2); color:var(--teal); }
+  .trend-down   { background:#fde8e0; color:var(--accent); }
+  .trend-flat   { background:var(--surface2); color:var(--ink3); }
+  .trend-recov  { background:#fff0e0; color:#b86000; }
+  .score-chip {
+    font-size:12px; font-weight:700; padding:3px 9px;
+    border-radius:100px; background:var(--surface2); color:var(--ink);
+  }
+  .badge-list { display:flex; flex-wrap:wrap; gap:4px; }
+  .badge-mini {
+    font-size:10px; padding:2px 6px; border-radius:100px;
+    background:var(--gold2); color:var(--gold); font-weight:600;
+    white-space:nowrap;
+  }
+
+  /* ── ÁREAS DO CONHECIMENTO ── */
+  .area-header {
+    display:flex; align-items:center; gap:16px;
+    padding:22px 24px; border-radius:var(--radius);
+    margin-bottom:16px;
+  }
+  .area-header-icon {
+    width:52px;height:52px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;flex-shrink:0;
+  }
+  .area-header-info { flex:1; }
+  .area-header-nome { font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink); }
+  .area-header-desc { font-size:12px;color:var(--ink3);margin-top:3px;line-height:1.6; }
+  .area-header-stats { display:flex;gap:24px;flex-shrink:0; }
+  .area-stat { text-align:center; }
+  .area-stat-val { font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink); }
+  .area-stat-lbl { font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.5px; }
+
+  .nivel-bar-wrap { display:flex;gap:2px;margin:8px 0; }
+  .nivel-bar {
+    flex:1;height:8px;border-radius:2px;background:var(--surface2);
+    transition:background 0.3s;
+  }
+  .nivel-bar.ativo { background:var(--accent); }
+
+  .faixa-alunos {
+    display:flex;align-items:center;gap:10px;
+    padding:8px 12px;border-radius:var(--radius-sm);
+    background:var(--surface2);margin-bottom:6px;font-size:13px;
+  }
+  .faixa-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+  .faixa-label { flex:1;font-weight:500; }
+  .faixa-count { font-weight:700;color:var(--ink); }
+  .faixa-pct { font-size:11px;color:var(--ink3);width:36px;text-align:right; }
+
+  .acertos-gauge {
+    display:flex;align-items:center;gap:10px;margin-bottom:10px;
+  }
+  .acertos-gauge-label { font-size:12px;color:var(--ink2);width:120px;flex-shrink:0; }
+  .acertos-gauge-track {
+    flex:1;height:20px;background:var(--surface2);
+    border-radius:4px;overflow:hidden;position:relative;
+  }
+  .acertos-gauge-fill {
+    height:100%;border-radius:4px;display:flex;
+    align-items:center;justify-content:flex-end;
+    padding-right:8px;font-size:11px;font-weight:700;color:white;
+    transition:width 0.5s;
+  }
+  .acertos-gauge-meta {
+    position:absolute;top:0;bottom:0;width:2px;
+    background:var(--ink);opacity:0.25;
+  }
+  .diagnostico-box {
+    border-left:3px solid var(--accent);padding:14px 16px;
+    background:var(--surface2);border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+    margin-top:16px;
+  }
+  .diagnostico-titulo { font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px; }
+  .diagnostico-texto { font-size:13px;color:var(--ink2);line-height:1.7; }
+
+  /* ── TOP 15 ── */
+  .top15-grid {
+    display:grid;grid-template-columns:repeat(3,1fr);
+    gap:10px;margin-bottom:24px;
+  }
+  .top15-card {
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:14px 16px;
+    display:flex;align-items:center;gap:12px;
+    transition:border-color 0.15s;
+  }
+  .top15-card:hover { border-color:var(--accent); }
+  .top15-card.gold   { border-left:3px solid #c8a800;background:#fffdf0; }
+  .top15-card.silver { border-left:3px solid #8a9bb0; }
+  .top15-card.bronze { border-left:3px solid #b07040; }
+  .top15-pos {
+    font-family:'DM Serif Display',serif;font-size:22px;
+    width:28px;text-align:center;flex-shrink:0;
+  }
+  .top15-initial {
+    width:38px;height:38px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'DM Serif Display',serif;font-size:14px;
+    color:white;flex-shrink:0;
+  }
+  .top15-info { flex:1;min-width:0; }
+  .top15-nome { font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .top15-sub  { font-size:11px;color:var(--ink3);margin-top:2px; }
+  .top15-tri  { font-family:'DM Serif Display',serif;font-size:20px;color:var(--accent);flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<!-- ================================================ -->
+<!-- TELA DE LOGIN -->
+<!-- ================================================ -->
+<style>
+  #login-screen {
+    position:fixed; inset:0; z-index:9999;
+    background:#1a1814;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'DM Sans',sans-serif;
+  }
+  #login-box {
+    background:#ffffff; border-radius:16px;
+    padding:48px 40px; width:100%; max-width:400px;
+    text-align:center; box-shadow:0 24px 80px rgba(0,0,0,0.4);
+  }
+  #login-logo {
+    font-family:'DM Serif Display',serif;
+    font-size:28px; color:#1a1814; line-height:1.1; margin-bottom:6px;
+  }
+  #login-escola {
+    font-size:12px; color:#a09b96; margin-bottom:32px; font-weight:300;
+  }
+  #login-label {
+    font-size:11px; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.8px; color:#6b6660; margin-bottom:8px; display:block;
+    text-align:left;
+  }
+  #login-input {
+    width:100%; border:1.5px solid #ddd9d3;
+    border-radius:8px; padding:12px 16px;
+    font-family:'DM Sans',sans-serif; font-size:15px;
+    color:#1a1814; background:#f5f3ef;
+    outline:none; transition:border-color 0.2s;
+    box-sizing:border-box; text-align:center;
+    letter-spacing:2px;
+  }
+  #login-input:focus { border-color:#c8440a; background:#fff; }
+  #login-input.erro { border-color:#c8440a; background:#fff5f2; animation:shake 0.4s; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)}
+  }
+  #login-btn {
+    width:100%; margin-top:16px;
+    background:#c8440a; color:white; border:none;
+    border-radius:8px; padding:13px;
+    font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+    cursor:pointer; transition:background 0.15s;
+  }
+  #login-btn:hover { background:#a83608; }
+  #login-erro {
+    font-size:12px; color:#c8440a; margin-top:10px;
+    min-height:18px; font-weight:500;
+  }
+  #login-badge {
+    display:inline-block; background:#f0ede7; color:#6b6660;
+    font-size:11px; font-weight:600; padding:4px 12px;
+    border-radius:100px; margin-bottom:24px;
+    text-transform:uppercase; letter-spacing:0.6px;
+  }
+  #dashboard-wrap { display:none; }
+</style>
+
+<div id="login-screen">
+  <div id="login-box">
+    <div id="login-logo">Dashboard ENEM<br><em style="font-size:18px;color:#a09b96">CEPRA</em></div>
+    <div id="login-escola">Centro Educacional Prof. Ruy Azevedo · Santo Antônio de Pádua–RJ</div>
+    <div id="login-badge">🔒 Acesso restrito</div>
+    <label id="login-label" for="login-input">Senha de acesso</label>
+    <input id="login-input" type="password" placeholder="••••••••••••" autocomplete="current-password"
+           onkeydown="if(event.key==='Enter')tentarLogin()">
+    <button id="login-btn" onclick="tentarLogin()">Entrar</button>
+    <div id="login-erro"></div>
+    <div style="margin-top:28px;font-size:11px;color:#b0aa9f">
+      Dados protegidos conforme LGPD · Lei 13.709/2018
+    </div>
+  </div>
+</div>
+
+<div id="dashboard-wrap">
+
+  <div class="header-left">
+    <h1>Análise ENEM<br><em style="color:#a09b96;font-size:22px">CEPRA — 3ª Série</em></h1>
+    <p>Centro Educacional Professor Ruy Azevedo · Santo Antônio de Pádua–RJ</p>
+  </div>
+  <div class="header-right">
+    <div class="simulado-badge">SIM ENEM 1 · 2026</div>
+    <p>30 participantes · 3ª Série EM</p>
+    <p style="margin-top:4px">Turma: 3ª Série EM – 2026</p>
+  </div>
+</div>
+
+<div class="nav-bar no-print">
+  <div class="nav-tab active" id="tab-turma" onclick="showView('turma',this)">Turma</div>
+  <div class="nav-tab" onclick="showView('ranking',this)">Ranking</div>
+  <div class="nav-tab" onclick="showView('areas',this)">📚 Áreas</div>
+  <div class="nav-tab" onclick="showView('aluno',this)">Aluno</div>
+  <div class="nav-tab" onclick="showView('meta',this)">Simulador de Meta</div>
+  <div class="nav-tab" onclick="showView('comparativo',this)">📈 Comparativo</div>
+  <div class="nav-tab" onclick="showView('planilhas',this)">📂 Planilhas</div>
+  <div class="student-select-wrap" id="student-selector-wrap" style="display:none">
+    <label>Aluno:</label>
+    <select id="student-select" onchange="renderAlunoView()"></select>
+  </div>
+  <button class="btn-print" onclick="window.print()">⎙ Imprimir</button>
+</div>
+
+<!-- ================================================ -->
+<!-- VIEW: TURMA -->
+<!-- ================================================ -->
+<div class="content view active" id="view-turma">
+
+  <div class="section-title">Visão geral da turma</div>
+  <div class="section-sub">Desempenho coletivo · SIM ENEM 1 – 2026</div>
+
+  <div class="grid-5">
+    <div class="metric-card accent">
+      <div class="metric-label">Média TRI Geral</div>
+      <div class="metric-value big">533,6</div>
+      <div class="metric-sub">Pontos TRI (0–1000)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Redação média</div>
+      <div class="metric-value">807</div>
+      <div class="metric-sub">de 1000 pontos</div>
+    </div>
+    <div class="metric-card teal">
+      <div class="metric-label">Melhor rank rede</div>
+      <div class="metric-value">31º</div>
+      <div class="metric-sub">Miguel Souza Macedo</div>
+    </div>
+    <div class="metric-card warn">
+      <div class="metric-label">Área mais crítica</div>
+      <div class="metric-value" style="font-size:22px">CNT</div>
+      <div class="metric-sub">24/30 têm CNT como maior fraqueza</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Comp. redação crítica</div>
+      <div class="metric-value" style="font-size:22px">C1</div>
+      <div class="metric-sub">Média 140/200 · 70%</div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="insight-box">
+    <div class="insight-icon">◆</div>
+    <div>
+      <div class="insight-title">CNT é o calcanhar de Aquiles coletivo</div>
+      <div class="insight-text">80% dos alunos (24/30) têm Ciências da Natureza como área mais fraca. Média de acertos: apenas 15,4 de 45 questões (34%). Prioridade máxima de intervenção pedagógica.</div>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-icon">◆</div>
+    <div>
+      <div class="insight-title">Dispersão interna elevada</div>
+      <div class="insight-text">O 1º colocado (rank 31 na rede, TRI 730,8) e o 30º (rank 1838, TRI 412,7) estão na mesma turma. Uma estratégia única de ensino não atende essa amplitude. Recomendada atenção diferenciada por faixa de desempenho.</div>
+    </div>
+  </div>
+  <div class="alert-box">
+    <div class="insight-icon">▲</div>
+    <div>
+      <div class="insight-title">C1 da Redação: ponto de intervenção imediata</div>
+      <div class="insight-text">Competência 1 (domínio da modalidade escrita formal) é a mais fraca da turma: média 140/200. As demais competências estão entre 155 e 177. Exercícios de norma culta e leitura de textos formais têm alto impacto.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- GRÁFICO TRI POR ÁREA -->
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">TRI médio por área</div>
+      <div class="chart-desc">Desempenho médio da turma em cada componente curricular</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="chartAreaTurma"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Acertos médios por área</div>
+      <div class="chart-desc">Quantidade média de questões certas (de 45 por área)</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="chartAcertos"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISTRIBUIÇÃO TRI -->
+  <div class="chart-card">
+    <div class="chart-title">Distribuição de desempenho — Média TRI geral</div>
+    <div class="chart-desc">Frequência de alunos por faixa de pontuação TRI</div>
+    <div class="chart-wrap" style="height:200px">
+      <canvas id="chartHistograma"></canvas>
+    </div>
+  </div>
+
+  <!-- COMPETÊNCIAS REDAÇÃO TURMA -->
+  <div class="chart-card">
+    <div class="chart-title">Redação — Média por competência (turma)</div>
+    <div class="chart-desc">C1 = modalidade escrita · C2 = compreensão da proposta · C3 = argumentação · C4 = coesão · C5 = proposta de intervenção</div>
+    <div class="chart-wrap" style="height:200px">
+      <canvas id="chartCompTurma"></canvas>
+    </div>
+  </div>
+
+  <!-- HEATMAP ACERTOS -->
+  <div class="chart-card">
+    <div class="chart-title">Mapa de calor — Acertos por aluno e área</div>
+    <div class="chart-desc">Visualização da intensidade de acertos. Verde = alto desempenho · Vermelho = baixo desempenho</div>
+    <div id="heatmap-container"></div>
+  </div>
+
+</div>
+
+<!-- ================================================ -->
+<!-- VIEW: RANKING -->
+<!-- ================================================ -->
+<div class="content view" id="view-ranking">
+
+  <!-- ── TOP 15 ── -->
+  <div class="section-title">Top 15 — Maiores notas TRI</div>
+  <div class="section-sub">Os 15 melhores desempenhos da turma no simulado atual · clique no card para ver o painel individual</div>
+  <div class="top15-grid" id="top15-grid"></div>
+
+  <div class="divider"></div>
+
+  <!-- ── RANKING SEMESTRAL ── -->
+  <div class="section-title">Ranking Semestral</div>
+  <div class="section-sub" id="sem-sub">Evolução ao longo dos simulados do semestre</div>
+  <div id="sem-ranking-content"></div>
+
+  <div class="divider"></div>
+
+  <!-- ── RANKING ATUAL COMPLETO ── -->
+  <div class="section-title">Ranking completo — simulado atual</div>
+  <div class="section-sub">Posição interna e na rede · ordenado por TRI médio</div>
+
+  <div class="chart-card">
+    <div class="chart-title">Classificação completa — TRI médio</div>
+    <div class="chart-desc">Barra = TRI do aluno · traço = média da turma</div>
+    <div class="chart-wrap" style="height:780px">
+      <canvas id="chartRankingBars"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Tabela de desempenho completa</div>
+    <div class="chart-desc">Ordenado por rank na escola · Área fraca detectada automaticamente</div>
+    <table class="ranking-table">
+      <thead>
+        <tr>
+          <th>Pos.</th><th>Aluno</th><th>TRI Médio</th><th>Redação</th>
+          <th>LGG</th><th>CHS</th><th>CNT</th><th>MAT</th>
+          <th>Rank Rede</th><th>Área crítica</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ================================================ -->
+<!-- VIEW: ÁREAS DO CONHECIMENTO -->
+<!-- ================================================ -->
+<div class="content view" id="view-areas">
+  <div class="section-title">Áreas do Conhecimento</div>
+  <div class="section-sub">Diagnóstico aprofundado por componente curricular · com contexto pedagógico e comparativo histórico ENEM</div>
+  <div id="areas-content"></div>
+</div>
+
+<!-- ================================================ -->
+<!-- VIEW: ALUNO -->
+<!-- ================================================ -->
+<div class="content view" id="view-aluno">
+  <div id="aluno-content"></div>
+</div>
+
+<!-- ================================================ -->
+<!-- VIEW: META -->
+<!-- ================================================ -->
+<div class="content view" id="view-meta">
+
+  <div class="section-title">Simulador de Meta</div>
+  <div class="section-sub">Defina a nota de corte de um curso e veja o gap por área para cada aluno</div>
+
+  <div class="meta-panel">
+    <div class="meta-input-row">
+      <div class="meta-field">
+        <label>Aluno</label>
+        <select id="meta-aluno-select" style="width:240px"></select>
+      </div>
+      <div class="meta-field">
+        <label>Curso / Universidade</label>
+        <input type="text" id="meta-curso" placeholder="Ex: Medicina UFRJ" style="width:220px">
+      </div>
+      <div class="meta-field">
+        <label>Meta TRI Geral</label>
+        <input type="number" id="meta-tri" placeholder="Ex: 700" min="300" max="1000">
+      </div>
+      <div class="meta-field">
+        <label>Meta Redação</label>
+        <input type="number" id="meta-red" placeholder="Ex: 900" min="0" max="1000">
+      </div>
+      <button class="btn-calcular" onclick="calcularMeta()">Calcular gap</button>
+    </div>
+    <div id="meta-resultado" style="display:none">
+      <div class="divider" style="margin:16px 0"></div>
+      <div id="meta-aluno-header" style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:12px"></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="chartMeta"></canvas></div>
+      <div class="gap-grid" id="gap-grid"></div>
+      <div id="meta-diagnostico" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <!-- Preset cursos -->
+  <div class="chart-card">
+    <div class="chart-title">Referência de cortes (SISU 2025 — aproximados)</div>
+    <div class="chart-desc">Use como referência para definir a meta. Clique para preencher automaticamente.</div>
+    <div id="preset-cursos"></div>
+  </div>
+
+</div>
+
+<!-- ================================================ -->
+<!-- VIEW: PLANILHAS -->
+<!-- ================================================ -->
+<div class="content view" id="view-planilhas">
+
+  <div class="section-title">Gerenciar planilhas</div>
+  <div class="section-sub">Carregue, visualize e remova os simulados importados</div>
+
+  <!-- DROP ZONE -->
+  <div class="drop-zone" id="drop-zone"
+       onclick="document.getElementById('file-input').click()"
+       ondragover="event.preventDefault();this.classList.add('drag-over')"
+       ondragleave="this.classList.remove('drag-over')"
+       ondrop="handleDrop(event)">
+    <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
+    <div class="drop-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+    <div class="drop-text">
+      <strong>Arraste o arquivo .xlsx aqui</strong>
+      <span>ou clique para selecionar · Mesmo formato das planilhas SIM ENEM</span>
+    </div>
+    <div id="drop-status" class="drop-status drop-status-idle">Pronto para receber</div>
+  </div>
+
+  <!-- LISTA DE PLANILHAS -->
+  <div id="planilhas-lista"></div>
+
+</div>
+
+<!-- ================================================ -->
+<!-- VIEW: COMPARATIVO -->
+<!-- ================================================ -->
+<div class="content view" id="view-comparativo">
+
+  <div class="section-title">Comparativo entre simulados</div>
+  <div class="section-sub" id="comp-sub">Carregue ao menos 2 planilhas na aba Planilhas para ativar esta seção</div>
+
+  <!-- AVISO se só tem 1 simulado -->
+  <div id="comp-aviso" class="comp-aviso">
+    <div style="font-size:40px;margin-bottom:16px">📂</div>
+    <div style="font-size:16px;font-weight:600;color:var(--ink);margin-bottom:8px">Nenhum comparativo disponível</div>
+    <div style="font-size:13px;color:var(--ink3);margin-bottom:20px">Carregue pelo menos 2 planilhas de simulados diferentes na aba Planilhas para visualizar a evolução.</div>
+    <button class="btn-usar" onclick="document.querySelector('[onclick*=planilhas]').click()">Ir para Planilhas</button>
+  </div>
+
+  <!-- CONTEÚDO COMPARATIVO -->
+  <div id="comp-content" style="display:none">
+
+    <!-- PAINEL DE CONTROLES -->
+    <div class="comp-controles no-print">
+
+      <!-- Seletor de simulados -->
+      <div class="comp-controle-grupo">
+        <div class="comp-controle-titulo">Simulados para comparar</div>
+        <div id="comp-sim-checks" class="comp-checks"></div>
+      </div>
+
+      <!-- Divider -->
+      <div style="width:1px;background:var(--border);align-self:stretch;margin:0 4px"></div>
+
+      <!-- Seletor de aluno -->
+      <div class="comp-controle-grupo">
+        <div class="comp-controle-titulo">Aluno para análise individual</div>
+        <select id="comp-aluno-select" onchange="aplicarFiltros()" style="min-width:210px;margin-top:4px"></select>
+      </div>
+
+      <!-- Divider -->
+      <div style="width:1px;background:var(--border);align-self:stretch;margin:0 4px"></div>
+
+      <!-- Resumo seleção -->
+      <div class="comp-controle-grupo" style="flex:0 0 auto">
+        <div class="comp-controle-titulo">Selecionados</div>
+        <div id="comp-sel-resumo" style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--accent);line-height:1">0</div>
+        <div style="font-size:11px;color:var(--ink3)">simulados</div>
+      </div>
+    </div>
+
+    <!-- BLOCO 1: Linha evolução turma -->
+    <div class="chart-card">
+      <div class="chart-title">Evolução da turma — TRI médio por área</div>
+      <div class="chart-desc">Cada ponto = média da turma naquele simulado · linha tracejada = TRI Geral</div>
+      <div class="chart-wrap" style="height:280px"><canvas id="chartEvolucaoTurma"></canvas></div>
+    </div>
+
+    <!-- BLOCO 2: Barras agrupadas -->
+    <div class="chart-card">
+      <div class="chart-title">Comparativo por área — simulados selecionados</div>
+      <div class="chart-desc">Cada cor representa um simulado · compare LGG, CHS, CNT e MAT lado a lado</div>
+      <div class="chart-wrap" style="height:300px"><canvas id="chartBarrasAgrupadas"></canvas></div>
+    </div>
+
+    <!-- BLOCO 3 + 4 -->
+    <div class="grid-2">
+      <div class="chart-card">
+        <div class="chart-title">Evolução individual</div>
+        <div class="chart-desc" id="comp-individual-desc">Selecione um aluno no painel acima</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="chartEvolucaoAluno"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Ranking — quem subiu e quem caiu</div>
+        <div class="chart-desc" id="comp-delta-desc">Δ entre o 1º e o último simulado selecionado</div>
+        <div id="ranking-delta-list" style="max-height:280px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- BLOCO 5: Heatmap evolução -->
+    <div class="chart-card">
+      <div class="chart-title">Mapa de evolução — TRI médio por aluno e simulado</div>
+      <div class="chart-desc">Verde = nota mais alta · Vermelho = nota mais baixa · última coluna = variação total</div>
+      <div id="heatmap-evolucao"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="print-footer">
+  CEPRA — Centro Educacional Professor Ruy Azevedo · SIM ENEM 1 – 2026 · 3ª Série EM
+</div>
+
+</div><!-- /dashboard-wrap -->
+
+<script>
+// ================================================
+// DADOS
+// ================================================
+const DADOS = {
+  "simulado": "SIM ENEM 1 - 2026",
+  "escola": "CEPRA",
+  "total_alunos": 30,
+  "media_tri_turma": 533.6,
+  "media_tri_por_area": {"LGG": 496.8,"CHS": 484.6,"CNT": 407.1,"MAT": 472.9},
+  "media_redacao": 807.0,
+  "media_competencias": [140, 177, 155, 165, 169],
+  "media_acertos": {"LGG": 25.0,"CHS": 23.9,"CNT": 15.4,"MAT": 17.4},
+  "alunos": [
+    {"nome":"Miguel Souza Macedo","rank_escola":1,"rank_rede":31,"media_tri":730.8,"tri":{"LGG":693.4,"CHS":691.7,"CNT":587.7,"MAT":801.2},"redacao":880,"acertos":{"LGG":38,"CHS":36,"CNT":30,"MAT":37},"competencias":[120,160,200,200,200]},
+    {"nome":"Sofia Cosendey Carvalho","rank_escola":2,"rank_rede":114,"media_tri":668.6,"tri":{"LGG":741.3,"CHS":683.8,"CNT":476.4,"MAT":521.4},"redacao":920,"acertos":{"LGG":41,"CHS":37,"CNT":22,"MAT":21},"competencias":[160,160,200,200,200]},
+    {"nome":"Raphael Martins Leite Lima","rank_escola":3,"rank_rede":119,"media_tri":666.6,"tri":{"LGG":681.7,"CHS":716.6,"CNT":502.7,"MAT":512.1},"redacao":920,"acertos":{"LGG":38,"CHS":38,"CNT":25,"MAT":21},"competencias":[200,160,160,200,200]},
+    {"nome":"José Antonio Morteira Pereira Filho","rank_escola":4,"rank_rede":232,"media_tri":625.5,"tri":{"LGG":548.6,"CHS":697.0,"CNT":509.7,"MAT":532.0},"redacao":840,"acertos":{"LGG":29,"CHS":37,"CNT":22,"MAT":22},"competencias":[120,200,160,160,200]},
+    {"nome":"Gabriel Daher Rocha Souza","rank_escola":5,"rank_rede":239,"media_tri":624.3,"tri":{"LGG":543.1,"CHS":553.8,"CNT":454.2,"MAT":690.7},"redacao":880,"acertos":{"LGG":28,"CHS":29,"CNT":19,"MAT":30},"competencias":[120,160,200,200,200]},
+    {"nome":"Betina Souza De Paula Ramos","rank_escola":6,"rank_rede":304,"media_tri":608.9,"tri":{"LGG":643.3,"CHS":609.9,"CNT":366.4,"MAT":544.7},"redacao":880,"acertos":{"LGG":35,"CHS":32,"CNT":11,"MAT":23},"competencias":[160,200,160,200,160]},
+    {"nome":"Pedro Santos Zimermann","rank_escola":7,"rank_rede":403,"media_tri":586.7,"tri":{"LGG":479.8,"CHS":520.2,"CNT":489.2,"MAT":564.4},"redacao":880,"acertos":{"LGG":24,"CHS":27,"CNT":21,"MAT":24},"competencias":[160,200,160,160,200]},
+    {"nome":"Gustavo Chiapini Pereira","rank_escola":8,"rank_rede":416,"media_tri":584.5,"tri":{"LGG":489.8,"CHS":564.8,"CNT":400.6,"MAT":547.2},"redacao":920,"acertos":{"LGG":26,"CHS":29,"CNT":14,"MAT":23},"competencias":[160,200,200,200,160]},
+    {"nome":"Maria Eduarda Ribeiro De Castro","rank_escola":9,"rank_rede":481,"media_tri":573.9,"tri":{"LGG":474.5,"CHS":538.6,"CNT":419.4,"MAT":517.0},"redacao":920,"acertos":{"LGG":23,"CHS":30,"CNT":17,"MAT":21},"competencias":[120,200,200,200,200]},
+    {"nome":"Gabriel Lima Pinheiro","rank_escola":10,"rank_rede":499,"media_tri":571.2,"tri":{"LGG":560.8,"CHS":496.9,"CNT":408.8,"MAT":509.4},"redacao":880,"acertos":{"LGG":31,"CHS":25,"CNT":14,"MAT":21},"competencias":[160,200,160,160,200]},
+    {"nome":"Pedro Nogueira Azeredo","rank_escola":11,"rank_rede":538,"media_tri":565.8,"tri":{"LGG":498.6,"CHS":530.1,"CNT":457.7,"MAT":462.5},"redacao":880,"acertos":{"LGG":27,"CHS":26,"CNT":19,"MAT":17},"competencias":[120,200,160,200,200]},
+    {"nome":"Júlia Mendel Carvalhal","rank_escola":12,"rank_rede":567,"media_tri":560.2,"tri":{"LGG":559.2,"CHS":500.3,"CNT":391.7,"MAT":470.0},"redacao":880,"acertos":{"LGG":30,"CHS":25,"CNT":16,"MAT":17},"competencias":[160,160,160,200,200]},
+    {"nome":"Gabriel Moreira Oliveira","rank_escola":13,"rank_rede":700,"media_tri":544.6,"tri":{"LGG":533.4,"CHS":435.1,"CNT":392.8,"MAT":521.9},"redacao":840,"acertos":{"LGG":27,"CHS":22,"CNT":16,"MAT":22},"competencias":[80,160,200,200,200]},
+    {"nome":"Emanuelle De Almeida Spagnolo Magalhães","rank_escola":14,"rank_rede":742,"media_tri":537.2,"tri":{"LGG":434.9,"CHS":425.3,"CNT":401.3,"MAT":544.6},"redacao":880,"acertos":{"LGG":21,"CHS":20,"CNT":17,"MAT":23},"competencias":[160,200,120,200,200]},
+    {"nome":"Victor Pereira Terra","rank_escola":15,"rank_rede":869,"media_tri":524.3,"tri":{"LGG":569.9,"CHS":512.7,"CNT":440.7,"MAT":458.1},"redacao":640,"acertos":{"LGG":31,"CHS":28,"CNT":18,"MAT":17},"competencias":[120,200,120,120,80]},
+    {"nome":"Murilo Salvador Fernandes","rank_escola":16,"rank_rede":873,"media_tri":523.9,"tri":{"LGG":493.9,"CHS":491.9,"CNT":385.0,"MAT":408.9},"redacao":840,"acertos":{"LGG":25,"CHS":25,"CNT":14,"MAT":13},"competencias":[160,200,120,160,200]},
+    {"nome":"Gustavo Games Pinheiro","rank_escola":17,"rank_rede":905,"media_tri":520.2,"tri":{"LGG":502.1,"CHS":475.0,"CNT":475.3,"MAT":428.6},"redacao":720,"acertos":{"LGG":26,"CHS":24,"CNT":21,"MAT":15},"competencias":[160,120,120,160,160]},
+    {"nome":"Matheus Casadio Devita","rank_escola":18,"rank_rede":920,"media_tri":519.1,"tri":{"LGG":618.3,"CHS":372.2,"CNT":338.6,"MAT":426.1},"redacao":840,"acertos":{"LGG":34,"CHS":17,"CNT":9,"MAT":16},"competencias":[120,200,200,160,160]},
+    {"nome":"Luiggi Franco Torres","rank_escola":19,"rank_rede":1137,"media_tri":492.6,"tri":{"LGG":399.2,"CHS":479.7,"CNT":365.9,"MAT":538.4},"redacao":680,"acertos":{"LGG":18,"CHS":23,"CNT":12,"MAT":23},"competencias":[160,120,80,120,200]},
+    {"nome":"Matheus Pereira Paz Rodrigues","rank_escola":20,"rank_rede":1176,"media_tri":488.4,"tri":{"LGG":409.1,"CHS":535.4,"CNT":376.8,"MAT":400.6},"redacao":720,"acertos":{"LGG":18,"CHS":29,"CNT":13,"MAT":13},"competencias":[120,200,160,80,160]},
+    {"nome":"Lavínia Maria Rodrigues Ramos","rank_escola":21,"rank_rede":1183,"media_tri":487.1,"tri":{"LGG":411.3,"CHS":399.5,"CNT":354.9,"MAT":389.5},"redacao":880,"acertos":{"LGG":19,"CHS":17,"CNT":12,"MAT":11},"competencias":[200,200,120,200,160]},
+    {"nome":"Noah Robert Santiago","rank_escola":22,"rank_rede":1197,"media_tri":484.9,"tri":{"LGG":412.9,"CHS":407.2,"CNT":327.1,"MAT":397.1},"redacao":880,"acertos":{"LGG":20,"CHS":19,"CNT":7,"MAT":12},"competencias":[120,200,160,200,200]},
+    {"nome":"Isaque Ferreira Lima Galiaço","rank_escola":23,"rank_rede":1328,"media_tri":471.1,"tri":{"LGG":457.5,"CHS":409.6,"CNT":379.1,"MAT":429.1},"redacao":680,"acertos":{"LGG":23,"CHS":19,"CNT":14,"MAT":15},"competencias":[120,200,120,80,160]},
+    {"nome":"Mel Gomes Miguel Nogueira","rank_escola":24,"rank_rede":1423,"media_tri":460.9,"tri":{"LGG":447.7,"CHS":403.2,"CNT":386.2,"MAT":347.4},"redacao":720,"acertos":{"LGG":21,"CHS":18,"CNT":15,"MAT":7},"competencias":[80,160,200,160,120]},
+    {"nome":"Lavínia Marino Lopes Barcelos","rank_escola":25,"rank_rede":1458,"media_tri":457.3,"tri":{"LGG":452.2,"CHS":356.0,"CNT":327.2,"MAT":391.0},"redacao":760,"acertos":{"LGG":21,"CHS":16,"CNT":8,"MAT":11},"competencias":[160,120,120,200,160]},
+    {"nome":"Valentina De Oliveira Rocha Pereira","rank_escola":26,"rank_rede":1550,"media_tri":447.8,"tri":{"LGG":372.4,"CHS":384.9,"CNT":327.2,"MAT":354.4},"redacao":800,"acertos":{"LGG":15,"CHS":17,"CNT":8,"MAT":8},"competencias":[160,160,160,200,120]},
+    {"nome":"Laura David Santiago","rank_escola":27,"rank_rede":1676,"media_tri":431.0,"tri":{"LGG":397.5,"CHS":331.5,"CNT":388.2,"MAT":357.7},"redacao":680,"acertos":{"LGG":17,"CHS":13,"CNT":16,"MAT":7},"competencias":[160,200,120,80,120]},
+    {"nome":"Maria Eduarda Paiva Chagas Muzi De Souza","rank_escola":28,"rank_rede":1769,"media_tri":420.9,"tri":{"LGG":331.3,"CHS":365.0,"CNT":323.8,"MAT":364.2},"redacao":720,"acertos":{"LGG":11,"CHS":17,"CNT":6,"MAT":9},"competencias":[160,200,120,120,120]},
+    {"nome":"Gabriel Antonio Medina Vaz","rank_escola":29,"rank_rede":1800,"media_tri":417.4,"tri":{"LGG":362.9,"CHS":307.0,"CNT":339.8,"MAT":397.1},"redacao":680,"acertos":{"LGG":16,"CHS":9,"CNT":9,"MAT":13},"competencias":[80,160,160,120,160]},
+    {"nome":"Pietra Souza De Menezes","rank_escola":30,"rank_rede":1838,"media_tri":412.7,"tri":{"LGG":382.4,"CHS":342.2,"CNT":418.2,"MAT":360.7},"redacao":560,"acertos":{"LGG":17,"CHS":14,"CNT":18,"MAT":9},"competencias":[120,120,120,120,80]}
+  ]
+};
+
+const AREAS = ['LGG','CHS','CNT','MAT'];
+const AREA_CORES = {
+  LGG: '#c8440a', CHS: '#1a6b6b', CNT: '#b8860b', MAT: '#4a6fa5'
+};
+const COMP_LABELS = ['C1','C2','C3','C4','C5'];
+const COMP_DESC = ['Modalidade\nescrita','Compreensão\nda proposta','Seleção de\nargumentos','Coesão\ntextual','Proposta de\nintervenção'];
+
+// ================================================
+// TABELA DE REFERÊNCIA HISTÓRICA ENEM 2009–2023
+// Fonte: microdados INEP + modelo TRI V2 (xTRI/XTRI EdTech)
+// tri_min, tri_med, tri_max por área e número de acertos
+// ================================================
+const TRI_REF = {
+  LGG: {
+     0:[300,300,300], 1:[303,316,330], 2:[311,328,345], 3:[319,339,358], 4:[326,349,370],
+     5:[332,358,381], 6:[338,367,392], 7:[344,376,402], 8:[349,384,412], 9:[355,392,421],
+    10:[360,400,430],11:[365,408,438],12:[370,415,447],13:[375,422,455],14:[380,429,463],
+    15:[385,436,471],16:[390,443,479],17:[395,450,487],18:[400,457,495],19:[405,464,502],
+    20:[410,471,510],21:[415,478,518],22:[420,485,525],23:[425,492,533],24:[430,499,541],
+    25:[435,506,549],26:[440,513,556],27:[446,520,564],28:[452,528,573],29:[458,536,582],
+    30:[465,544,592],31:[472,553,602],32:[480,562,612],33:[488,572,623],34:[497,582,635],
+    35:[507,593,647],36:[518,605,660],37:[530,617,674],38:[543,631,689],39:[557,645,705],
+    40:[573,661,722],41:[591,678,740],42:[611,697,760],43:[635,719,782],44:[663,744,790],
+    45:[790,790,790]
+  },
+  CHS: {
+     0:[329,329,329], 1:[333,343,354], 2:[338,352,367], 3:[343,361,380], 4:[348,370,392],
+     5:[353,379,404], 6:[358,388,416], 7:[363,397,428], 8:[368,406,439], 9:[373,415,451],
+    10:[378,424,462],11:[383,433,474],12:[388,442,485],13:[393,451,497],14:[399,460,508],
+    15:[405,469,520],16:[411,478,531],17:[417,487,543],18:[424,496,554],19:[431,505,566],
+    20:[438,514,577],21:[446,523,589],22:[454,532,601],23:[462,542,612],24:[471,552,624],
+    25:[480,562,636],26:[490,572,648],27:[500,583,660],28:[511,594,673],29:[523,606,686],
+    30:[535,618,700],31:[548,631,714],32:[562,645,729],33:[577,660,745],34:[593,676,762],
+    35:[610,693,780],36:[628,711,798],37:[648,730,817],38:[669,750,820],39:[691,771,820],
+    40:[715,793,820],41:[741,815,820],42:[768,820,820],43:[820,820,820],44:[820,820,820],
+    45:[820,820,820]
+  },
+  CNT: {
+     0:[300,300,300], 1:[305,318,332], 2:[312,330,348], 3:[320,342,364], 4:[328,353,379],
+     5:[336,364,393], 6:[344,375,407], 7:[352,385,421], 8:[360,395,435], 9:[368,405,448],
+    10:[376,415,462],11:[384,425,475],12:[392,435,489],13:[400,445,502],14:[408,455,516],
+    15:[416,465,529],16:[424,475,543],17:[432,485,556],18:[440,495,570],19:[449,506,583],
+    20:[458,517,597],21:[467,528,611],22:[477,540,625],23:[488,552,639],24:[499,565,654],
+    25:[511,578,669],26:[524,592,685],27:[538,607,702],28:[553,623,719],29:[569,640,737],
+    30:[586,658,756],31:[604,677,776],32:[624,697,797],33:[645,718,819],34:[668,740,843],
+    35:[692,763,869],36:[718,787,870],37:[746,813,870],38:[775,870,870],39:[870,870,870],
+    40:[870,870,870],41:[870,870,870],42:[870,870,870],43:[870,870,870],44:[870,870,870],
+    45:[870,870,870]
+  },
+  MAT: {
+     0:[330,330,330], 1:[336,349,364], 2:[343,364,385], 3:[351,378,406], 4:[359,392,426],
+     5:[368,406,446], 6:[377,420,466], 7:[387,434,486], 8:[397,448,506], 9:[407,462,525],
+    10:[418,476,545],11:[429,490,565],12:[441,504,584],13:[453,518,604],14:[466,533,624],
+    15:[479,547,643],16:[493,562,663],17:[508,577,683],18:[523,592,703],19:[539,608,723],
+    20:[555,624,743],21:[572,640,763],22:[590,657,783],23:[609,675,803],24:[629,694,824],
+    25:[650,713,845],26:[672,733,867],27:[695,754,890],28:[720,776,914],29:[746,800,938],
+    30:[773,825,962],31:[801,851,985],32:[830,879,987],33:[860,908,987],34:[887,938,987],
+    35:[912,963,987],36:[934,980,987],37:[950,987,987],38:[965,987,987],39:[980,987,987],
+    40:[987,987,987],41:[987,987,987],42:[987,987,987],43:[987,987,987],44:[987,987,987],
+    45:[987,987,987]
+  }
+};
+
+// ================================================
+// MAPEAMENTO VOCACIONAL
+// ================================================
+const PERFIS_VOCACIONAIS = [
+  { id:'exatas',   label:'Exatas & Tecnologia',  cor:'#4a6fa5', areas:{MAT:0.45,CNT:0.35,LGG:0.10,CHS:0.10},
+    cursos:['Engenharia Civil','Engenharia Elétrica','Ciência da Computação','Física','Matemática','Arquitetura'] },
+  { id:'saude',    label:'Saúde & Biológicas',   cor:'#c8440a', areas:{CNT:0.50,MAT:0.25,LGG:0.15,CHS:0.10},
+    cursos:['Medicina','Enfermagem','Farmácia','Odontologia','Biomedicina','Fisioterapia'] },
+  { id:'humanas',  label:'Humanas & Sociais',    cor:'#1a6b6b', areas:{CHS:0.45,LGG:0.35,MAT:0.10,CNT:0.10},
+    cursos:['Direito','Psicologia','Serviço Social','História','Pedagogia','Ciências Sociais'] },
+  { id:'linguagens',label:'Linguagens & Comunicação',cor:'#7a5c8a',areas:{LGG:0.55,CHS:0.30,MAT:0.08,CNT:0.07},
+    cursos:['Letras','Jornalismo','Publicidade','Relações Internacionais','Biblioteconomia'] },
+  { id:'gestao',   label:'Gestão & Negócios',    cor:'#b8860b', areas:{MAT:0.30,CHS:0.30,LGG:0.25,CNT:0.15},
+    cursos:['Administração','Economia','Contabilidade','Direito','Relações Internacionais'] }
+];
+
+// ================================================
+// SCORE DE RISCO INDIVIDUAL (0–100)
+// Metodologia baseada em xTRI V2 + microdados INEP
+// ================================================
+function calcularScore(a, metaTRI, metaRed) {
+  const totalAlunos = DADOS.total_alunos;
+  const areas = AREAS;
+  // Componente 1 — Distância da meta TRI (40%)
+  const metaT = metaTRI || 600;
+  const metaR = metaRed || 800;
+  const gapTRI = Math.max(0, metaT - a.media_tri);
+  const gapRed = Math.max(0, metaR - a.redacao);
+  const c1 = Math.min(100, (gapTRI / metaT) * 100 * 0.75 + (gapRed / metaR) * 100 * 0.25) * 0.40;
+
+  // Componente 2 — Posição na rede (25%)
+  // Sem saber total da rede, usamos rank relativo dentro da escola
+  const c2 = ((a.rank_escola - 1) / (totalAlunos - 1)) * 100 * 0.25;
+
+  // Componente 3 — Eficiência TRI vs esperado (20%)
+  // Compara TRI real com tri_med da tabela de referência
+  let eficiencias = areas.map(ar => {
+    const ac = a.acertos[ar];
+    const ref = TRI_REF[ar][ac];
+    if(!ref) return 0;
+    const triMed = ref[1];
+    const triMin = ref[0];
+    const range = ref[2] - triMin;
+    if(range === 0) return 0;
+    // Quão abaixo do esperado está? Positivo = abaixo = risco
+    return Math.max(0, (triMed - a.tri[ar]) / (range || 100)) * 100;
+  });
+  const c3 = (eficiencias.reduce((s,v)=>s+v,0) / areas.length) * 0.20;
+
+  // Componente 4 — Redação C1 (15%) — C1 é mais fraca historicamente
+  const c1_pct = (200 - a.competencias[0]) / 200 * 100;
+  const c4 = c1_pct * 0.15;
+
+  const score = Math.round(Math.min(100, c1 + c2 + c3 + c4));
+
+  let faixa, corFaixa, emoji;
+  if(score <= 20)      { faixa='Baixo risco';     corFaixa='#1a6b6b'; emoji='●'; }
+  else if(score <= 40) { faixa='Atenção leve';    corFaixa='#4a6fa5'; emoji='●'; }
+  else if(score <= 60) { faixa='Risco moderado';  corFaixa='#b8860b'; emoji='●'; }
+  else if(score <= 80) { faixa='Risco alto';      corFaixa='#c8440a'; emoji='●'; }
+  else                 { faixa='Crítico';          corFaixa='#8b0000'; emoji='●'; }
+
+  return { score, faixa, corFaixa, c1: Math.round(c1/0.40), c2: Math.round(c2/0.25), c3: Math.round(c3/0.20), c4: Math.round(c4/0.15), eficiencias };
+}
+
+// ================================================
+// EFICIÊNCIA TRI POR ÁREA — acertos vs tabela histórica
+// ================================================
+function calcularEficiencia(a) {
+  return AREAS.map(ar => {
+    const ac = a.acertos[ar];
+    const ref = TRI_REF[ar][ac];
+    if(!ref) return { area:ar, real:a.tri[ar], min:0, med:0, max:0, pct:50, status:'sem dado' };
+    const [min, med, max] = ref;
+    const range = max - min || 1;
+    const pct = Math.round(((a.tri[ar] - min) / range) * 100);
+    let status;
+    if(a.tri[ar] < min + range*0.2)      status = 'abaixo do esperado';
+    else if(a.tri[ar] < min + range*0.5) status = 'abaixo da média';
+    else if(a.tri[ar] < min + range*0.8) status = 'acima da média';
+    else                                  status = 'excelente';
+    return { area:ar, real:Math.round(a.tri[ar]), min, med: Math.round(med), max, pct: Math.min(100,Math.max(0,pct)), status };
+  });
+}
+
+// ================================================
+// PERFIL VOCACIONAL
+// ================================================
+function calcularPerfil(a) {
+  return PERFIS_VOCACIONAIS.map(p => {
+    const score = AREAS.reduce((s, ar) => s + (a.tri[ar] / 900) * (p.areas[ar] || 0), 0) * 100;
+    return { ...p, score: Math.round(score * 10) / 10 };
+  }).sort((a,b) => b.score - a.score);
+}
+
+// ================================================
+// 3 PRIORIDADES DE ESTUDO
+// ================================================
+function calcularPrioridades(a) {
+  const efic = calcularEficiencia(a);
+  const gaps = AREAS.map(ar => ({
+    area: ar,
+    gap: DADOS.media_tri_por_area[ar] - a.tri[ar],        // vs turma
+    eficPct: efic.find(e=>e.area===ar)?.pct ?? 50,
+    acertos: a.acertos[ar]
+  })).sort((a,b) => (b.gap + (50-b.eficPct)) - (a.gap + (50-a.eficPct)));
+
+  // Redação entra se C1 < 160
+  const prioridades = [];
+  if(a.competencias[0] < 160) {
+    prioridades.push({ label:'Redação — C1', detalhe:`Competência 1 em ${a.competencias[0]}/200 · foco em norma culta e estrutura formal`, icone:'✍' });
+  }
+  gaps.slice(0, prioridades.length < 3 ? 3 : 2).forEach(g => {
+    if(prioridades.length >= 3) return;
+    const ref = TRI_REF[g.area][g.acertos];
+    const detalhe = ref
+      ? `${g.acertos} acertos · TRI ${a.tri[g.area].toFixed(0)} · esperado ${ref[1]} (histórico ENEM)`
+      : `${g.acertos} acertos · TRI ${a.tri[g.area].toFixed(0)}`;
+    prioridades.push({ label: g.area, detalhe, icone: ['📐','🧬','🌍','📖'][AREAS.indexOf(g.area)] });
+  });
+  return prioridades.slice(0,3);
+}
+
+// ================================================
+// NAV
+// ================================================
+function showView(id, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('student-selector-wrap').style.display = id === 'aluno' ? 'flex' : 'none';
+  if(id === 'aluno') renderAlunoView();
+  if(id === 'planilhas') renderPlanilhasLista();
+  if(id === 'comparativo') renderComparativo();
+  if(id === 'ranking') { renderSemestralRanking(); buildTop15(); }
+  if(id === 'areas') renderAreasView();
+}
+
+// ================================================
+// POPULA SELECTS
+// ================================================
+function populaSelects() {
+  const opts = DADOS.alunos.map(a =>
+    `<option value="${a.rank_escola - 1}">${a.rank_escola}. ${a.nome}</option>`).join('');
+  document.getElementById('student-select').innerHTML = opts;
+  document.getElementById('meta-aluno-select').innerHTML = opts;
+}
+
+// ================================================
+// GRÁFICOS TURMA
+// ================================================
+function initTurmaCharts() {
+  // TRI por área
+  new Chart(document.getElementById('chartAreaTurma'), {
+    type: 'bar',
+    data: {
+      labels: AREAS,
+      datasets: [{
+        data: AREAS.map(a => DADOS.media_tri_por_area[a]),
+        backgroundColor: AREAS.map(a => AREA_CORES[a]),
+        borderWidth: 0,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          min: 300, max: 700,
+          grid: { color: '#e8e4de' },
+          ticks: { font: { family: 'DM Sans', size: 12 } }
+        },
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 13, weight: '600' } } }
+      }
+    }
+  });
+
+  // Acertos
+  new Chart(document.getElementById('chartAcertos'), {
+    type: 'bar',
+    data: {
+      labels: AREAS,
+      datasets: [
+        { label: 'Acertos médios', data: AREAS.map(a => DADOS.media_acertos[a]), backgroundColor: AREAS.map(a => AREA_CORES[a]), borderWidth: 0, borderRadius: 6 },
+        { label: 'Total questões', data: [45,45,45,45], backgroundColor: '#e8e4de', borderWidth: 0, borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { max: 45, grid: { color: '#e8e4de' }, ticks: { font: { family: 'DM Sans', size: 12 } } },
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 13, weight: '600' } } }
+      }
+    }
+  });
+
+  // Histograma
+  const faixas = ['300–400','400–450','450–500','500–550','550–600','600–650','650–700','700+'];
+  const counts = [0,0,0,0,0,0,0,0];
+  DADOS.alunos.forEach(a => {
+    const t = a.media_tri;
+    if(t < 400) counts[0]++;
+    else if(t < 450) counts[1]++;
+    else if(t < 500) counts[2]++;
+    else if(t < 550) counts[3]++;
+    else if(t < 600) counts[4]++;
+    else if(t < 650) counts[5]++;
+    else if(t < 700) counts[6]++;
+    else counts[7]++;
+  });
+  new Chart(document.getElementById('chartHistograma'), {
+    type: 'bar',
+    data: {
+      labels: faixas,
+      datasets: [{ data: counts, backgroundColor: '#c8440a', borderWidth: 0, borderRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { stepSize: 1, font: { family: 'DM Sans', size: 12 } }, grid: { color: '#e8e4de' } },
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 12 } } }
+      }
+    }
+  });
+
+  // Competências redação
+  new Chart(document.getElementById('chartCompTurma'), {
+    type: 'bar',
+    data: {
+      labels: ['C1 — Modalidade','C2 — Proposta','C3 — Argumentação','C4 — Coesão','C5 — Intervenção'],
+      datasets: [{
+        data: DADOS.media_competencias,
+        backgroundColor: ['#c8440a','#1a6b6b','#b8860b','#4a6fa5','#7a5c8a'],
+        borderWidth: 0, borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 200, grid: { color: '#e8e4de' }, ticks: { font: { family: 'DM Sans', size: 12 } } },
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 11 } } }
+      }
+    }
+  });
+
+  // Heatmap
+  buildHeatmap();
+}
+
+// ================================================
+// HEATMAP
+// ================================================
+function buildHeatmap() {
+  const container = document.getElementById('heatmap-container');
+  const max_acertos = 45;
+
+  let html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html += '<tr><th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--ink3);font-weight:600;width:200px">Aluno</th>';
+  AREAS.forEach(a => {
+    html += `<th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--ink3);font-weight:600">${a}<br><span style="font-weight:400">/ 45</span></th>`;
+  });
+  html += '</tr>';
+
+  DADOS.alunos.forEach(a => {
+    html += `<tr><td style="padding:4px 8px;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">${a.nome}</td>`;
+    AREAS.forEach(area => {
+      const v = a.acertos[area];
+      const pct = v / max_acertos;
+      const r = Math.round(200 - pct * 150);
+      const g = Math.round(80 + pct * 100);
+      const b = Math.round(60 + pct * 20);
+      const bg = `rgb(${r},${g},${b})`;
+      const color = pct > 0.5 ? '#fff' : '#1a1814';
+      html += `<td style="text-align:center;padding:4px 6px;background:${bg};color:${color};font-weight:600;border-radius:4px;margin:1px">${v}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</table></div>';
+  container.innerHTML = html;
+}
+
+// ================================================
+// RANKING
+// ================================================
+function buildRanking() {
+  // Gráfico de barras horizontais
+  const nomes = DADOS.alunos.map(a => {
+    const parts = a.nome.split(' ');
+    return parts[0] + ' ' + (parts[1] || '');
+  });
+  new Chart(document.getElementById('chartRankingBars'), {
+    type: 'bar',
+    data: {
+      labels: nomes,
+      datasets: [{
+        label: 'TRI Médio',
+        data: DADOS.alunos.map(a => a.media_tri),
+        backgroundColor: DADOS.alunos.map(a =>
+          a.rank_escola <= 3 ? '#c8440a' : a.rank_escola <= 10 ? '#4a6fa5' : '#b0aa9f'
+        ),
+        borderWidth: 0, borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        annotation: { annotations: {} }
+      },
+      scales: {
+        x: {
+          min: 350, max: 800,
+          grid: { color: '#e8e4de' },
+          ticks: { font: { family: 'DM Sans', size: 11 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { family: 'DM Sans', size: 11 } }
+        }
+      }
+    }
+  });
+
+  // Tabela
+  const tbody = document.getElementById('ranking-tbody');
+  tbody.innerHTML = DADOS.alunos.map(a => {
+    const areas = AREAS;
+    const triVals = areas.map(ar => a.tri[ar]);
+    const minIdx = triVals.indexOf(Math.min(...triVals));
+    const areaFraca = areas[minIdx];
+    const maxTRI = 800;
+    const barW = Math.round((a.media_tri / maxTRI) * 100);
+    const top = a.rank_escola <= 3;
+    return `<tr>
+      <td><span class="rank-num ${top ? 'top3' : ''}">${a.rank_escola}º</span></td>
+      <td class="aluno-name">${a.nome}</td>
+      <td>
+        <div class="tri-bar-wrap">
+          <div class="tri-bar" style="width:${barW}px"></div>
+          <span class="tri-num">${a.media_tri.toFixed(1)}</span>
+        </div>
+      </td>
+      <td>${a.redacao}</td>
+      <td>${a.tri.LGG.toFixed(0)}</td>
+      <td>${a.tri.CHS.toFixed(0)}</td>
+      <td>${a.tri.CNT.toFixed(0)}</td>
+      <td>${a.tri.MAT.toFixed(0)}</td>
+      <td>${a.rank_rede}º</td>
+      <td><span class="area-tag">${areaFraca}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ================================================
+// VIEW ALUNO
+// ================================================
+function renderAlunoView() {
+  const idx = parseInt(document.getElementById('student-select').value);
+  const a = DADOS.alunos[idx];
+  const areas = AREAS;
+  const triVals = areas.map(ar => a.tri[ar]);
+  const minIdx = triVals.indexOf(Math.min(...triVals));
+  const maxIdx = triVals.indexOf(Math.max(...triVals));
+  const areaFraca = areas[minIdx];
+  const areaForte = areas[maxIdx];
+  const inicial = a.nome.split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase();
+
+  // Calcula score, eficiência, vocacional, prioridades
+  const scoreData   = calcularScore(a);
+  const eficData    = calcularEficiencia(a);
+  const perfis      = calcularPerfil(a);
+  const prioridades = calcularPrioridades(a);
+
+  const eficStatusClass = s => {
+    if(s==='excelente')       return 'efic-excelente';
+    if(s==='acima da média')  return 'efic-acima';
+    if(s==='abaixo da média') return 'efic-abaixo-med';
+    return 'efic-abaixo';
+  };
+
+  const div = document.getElementById('aluno-content');
+  div.innerHTML = `
+    <!-- CABEÇALHO -->
+    <div class="student-header">
+      <div style="display:flex;align-items:center">
+        <div class="student-initial">${inicial}</div>
+        <div class="student-info">
+          <div class="student-name">${a.nome}</div>
+          <div class="student-meta">3ª Série EM – 2026 · ${DADOS.simulado}</div>
+        </div>
+      </div>
+      <div class="student-ranks">
+        <div class="rank-item">
+          <div class="rank-item-label">Rank Escola</div>
+          <div class="rank-item-value highlight">${a.rank_escola}º</div>
+          <div style="font-size:11px;color:#7a7470">de ${DADOS.total_alunos}</div>
+        </div>
+        <div class="rank-item">
+          <div class="rank-item-label">Rank Rede</div>
+          <div class="rank-item-value">${a.rank_rede}º</div>
+        </div>
+        <div class="rank-item">
+          <div class="rank-item-label">TRI Médio</div>
+          <div class="rank-item-value highlight">${a.media_tri.toFixed(1)}</div>
+        </div>
+        <div class="rank-item">
+          <div class="rank-item-label">Redação</div>
+          <div class="rank-item-value">${a.redacao}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ① SCORE DE RISCO -->
+    <div class="score-panel">
+      <div class="score-gauge-wrap">
+        <div class="score-number" style="color:${scoreData.corFaixa}">${scoreData.score}</div>
+        <div class="score-label" style="color:${scoreData.corFaixa}">${scoreData.faixa}</div>
+        <div class="score-bar-outer" style="width:100%;margin-top:10px">
+          <div class="score-needle" style="left:${scoreData.score}%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;width:100%;font-size:10px;color:var(--ink3);margin-top:4px">
+          <span>Baixo</span><span>Moderado</span><span>Crítico</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:14px">Score de Risco Individual · composição</div>
+        <div class="score-components">
+          <div class="score-comp-row">
+            <span class="score-comp-label">Distância da meta TRI/Redação (40%)</span>
+            <div class="score-comp-bar-outer"><div class="score-comp-bar-fill" style="width:${scoreData.c1}%;background:#c8440a"></div></div>
+            <span class="score-comp-val">${scoreData.c1}</span>
+          </div>
+          <div class="score-comp-row">
+            <span class="score-comp-label">Posição na escola (25%)</span>
+            <div class="score-comp-bar-outer"><div class="score-comp-bar-fill" style="width:${scoreData.c2}%;background:#4a6fa5"></div></div>
+            <span class="score-comp-val">${scoreData.c2}</span>
+          </div>
+          <div class="score-comp-row">
+            <span class="score-comp-label">Eficiência TRI vs histórico ENEM (20%)</span>
+            <div class="score-comp-bar-outer"><div class="score-comp-bar-fill" style="width:${scoreData.c3}%;background:#b8860b"></div></div>
+            <span class="score-comp-val">${scoreData.c3}</span>
+          </div>
+          <div class="score-comp-row">
+            <span class="score-comp-label">C1 redação — norma culta (15%)</span>
+            <div class="score-comp-bar-outer"><div class="score-comp-bar-fill" style="width:${scoreData.c4}%;background:#7a5c8a"></div></div>
+            <span class="score-comp-val">${scoreData.c4}</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:12px">Score 0 = sem risco · 100 = crítico · baseado em microdados ENEM 2009–2023</div>
+      </div>
+    </div>
+
+    <!-- ② EFICIÊNCIA TRI vs TABELA HISTÓRICA -->
+    <div class="chart-card">
+      <div class="chart-title">Eficiência TRI — acertos vs histórico ENEM 2009–2023</div>
+      <div class="chart-desc">Ponto = TRI real do aluno · Barra cinza = faixa histórica (mín–máx) para o mesmo número de acertos · Traço = mediana histórica</div>
+      ${eficData.map(e => {
+        const trackW = 100;
+        const rangePct = ((e.max - e.min) / 900) * 100;
+        const rangeLeft = (e.min / 900) * 100;
+        const medPct = ((e.med - e.min) / (e.max - e.min || 1)) * 100;
+        const dotPct = e.pct;
+        const cor = AREA_CORES[e.area];
+        return `<div class="efic-row">
+          <span class="efic-label">${e.area}</span>
+          <div class="efic-track">
+            <div class="efic-range" style="left:${rangeLeft}%;width:${rangePct}%"></div>
+            <div class="efic-med-line" style="left:${rangeLeft + (rangePct * medPct / 100)}%"></div>
+            <div class="efic-dot" style="left:${rangeLeft + (rangePct * dotPct / 100)}%;background:${cor}"></div>
+          </div>
+          <span class="efic-vals">${e.real} · ref ${e.min}–${e.max}</span>
+          <span class="efic-status ${eficStatusClass(e.status)}">${e.status}</span>
+        </div>`;
+      }).join('')}
+      <div style="font-size:11px;color:var(--ink3);margin-top:8px">Metodologia: tabela de referência TRI V2 · ${a.acertos.LGG} acertos LGG · ${a.acertos.CHS} CHS · ${a.acertos.CNT} CNT · ${a.acertos.MAT} MAT</div>
+    </div>
+
+    <!-- ③ PERFIL VOCACIONAL -->
+    <div class="chart-card">
+      <div class="chart-title">Perfil vocacional — área de força × famílias de cursos</div>
+      <div class="chart-desc">Score calculado pelo peso das áreas em cada família de cursos · ponderado pelo TRI real do aluno</div>
+      <div class="vocacional-grid">
+        ${perfis.map((p,i) => `
+          <div class="vocacional-item ${i===0?'top':''}" style="${i===0?`border-color:${p.cor}`:''}">
+            <div class="vocacional-score" style="color:${p.cor}">${p.score.toFixed(0)}</div>
+            <div class="vocacional-nome" style="color:${p.cor}">${p.label}</div>
+            <div class="vocacional-cursos">${p.cursos.slice(0,3).join(' · ')}</div>
+            ${i===0 ? `<div style="font-size:10px;font-weight:700;color:${p.cor};margin-top:4px">▲ Melhor fit</div>` : ''}
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- ④ 3 PRIORIDADES DE ESTUDO -->
+    <div class="chart-card">
+      <div class="chart-title">Plano de ação — 3 prioridades de estudo</div>
+      <div class="chart-desc">Ordenadas por impacto: gap em relação à turma + eficiência abaixo do esperado historicamente</div>
+      ${prioridades.map((p,i) => `
+        <div class="prioridade-item">
+          <div class="prioridade-num ${i===1?'p2':i===2?'p3':''}">${i+1}</div>
+          <div>
+            <div class="prioridade-label">${p.icone} ${p.label}</div>
+            <div class="prioridade-detalhe">${p.detalhe}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <!-- ⑤ GRÁFICOS ORIGINAIS -->
+    <div class="grid-2">
+      <div>
+        <div class="chart-card">
+          <div class="chart-title">TRI por área — com média da turma</div>
+          <div class="chart-desc">Linha tracejada = média da turma em cada área</div>
+          ${areas.map(ar => {
+            const val = a.tri[ar];
+            const media = DADOS.media_tri_por_area[ar];
+            const pct = Math.min(100, (val / 900) * 100);
+            const mediaPct = Math.min(100, (media / 900) * 100);
+            const cor = AREA_CORES[ar];
+            const diff = val - media;
+            const diffStr = diff >= 0 ? `+${diff.toFixed(0)}` : diff.toFixed(0);
+            return `<div class="area-row">
+              <span class="area-label">${ar}</span>
+              <div class="area-bar-outer">
+                <div class="area-bar-fill" style="width:${pct}%;background:${cor}">
+                  ${pct > 20 ? val.toFixed(0) : ''}
+                </div>
+                <div class="area-bar-meta-line" style="left:${mediaPct}%"></div>
+              </div>
+              <span class="area-extra">${val.toFixed(0)} <span style="color:${diff>=0?'var(--teal)':'var(--accent)'};font-weight:600">(${diffStr})</span></span>
+            </div>`;
+          }).join('')}
+          <div style="font-size:11px;color:var(--ink3);margin-top:12px">▏ linha = média da turma · (+/-) = diferença em relação à turma</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">Acertos por área (de 45 questões)</div>
+          <div class="chart-desc"></div>
+          ${areas.map(ar => {
+            const v = a.acertos[ar];
+            const pct = (v/45)*100;
+            const cor = AREA_CORES[ar];
+            return `<div class="area-row">
+              <span class="area-label">${ar}</span>
+              <div class="area-bar-outer">
+                <div class="area-bar-fill" style="width:${pct}%;background:${cor}">
+                  ${pct > 15 ? v : ''}
+                </div>
+              </div>
+              <span class="area-extra">${v}/45 = ${Math.round(pct)}%</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div>
+        <div class="chart-card">
+          <div class="chart-title">Radar de desempenho</div>
+          <div class="chart-desc">Comparação do aluno vs média da turma por área</div>
+          <div class="chart-wrap" style="height:280px">
+            <canvas id="chartRadar-${idx}"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">Competências da Redação</div>
+          <div class="chart-desc">Notas por competência · máximo 200 pontos cada</div>
+          <div class="comp-grid">
+            ${a.competencias.map((v,i) => {
+              const pct = v/200;
+              const cor = ['#c8440a','#1a6b6b','#b8860b','#4a6fa5','#7a5c8a'][i];
+              return `<div class="comp-item">
+                <div class="comp-num" style="color:${cor}">${v}</div>
+                <div class="comp-label">${COMP_LABELS[i]}</div>
+                <div class="comp-bar" style="background:${cor};width:${Math.round(pct*100)}%;margin:6px auto 0"></div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="metric-card warn">
+        <div class="metric-label">Área mais fraca</div>
+        <div class="metric-value" style="font-size:24px">${areaFraca}</div>
+        <div class="metric-sub">TRI: ${a.tri[areaFraca].toFixed(0)} · Acertos: ${a.acertos[areaFraca]}/45</div>
+        <div><span class="metric-badge badge-danger">Prioridade de estudo</span></div>
+      </div>
+      <div class="metric-card teal">
+        <div class="metric-label">Área mais forte</div>
+        <div class="metric-value" style="font-size:24px">${areaForte}</div>
+        <div class="metric-sub">TRI: ${a.tri[areaForte].toFixed(0)} · Acertos: ${a.acertos[areaForte]}/45</div>
+        <div><span class="metric-badge badge-ok">Ponto de apoio</span></div>
+      </div>
+    </div>
+  `;
+
+  // Radar chart
+  setTimeout(() => {
+    const ctx = document.getElementById(`chartRadar-${idx}`);
+    if(ctx) {
+      new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: [...AREAS, 'Redação'],
+          datasets: [
+            {
+              label: a.nome.split(' ')[0],
+              data: [...AREAS.map(ar => a.tri[ar]), a.redacao],
+              borderColor: '#c8440a', backgroundColor: 'rgba(200,68,10,0.15)',
+              borderWidth: 2, pointBackgroundColor: '#c8440a'
+            },
+            {
+              label: 'Média turma',
+              data: [...AREAS.map(ar => DADOS.media_tri_por_area[ar]), DADOS.media_redacao],
+              borderColor: '#b0aa9f', backgroundColor: 'rgba(176,170,159,0.1)',
+              borderWidth: 1.5, borderDash: [4,4], pointBackgroundColor: '#b0aa9f'
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            r: {
+              min: 300, max: 950,
+              ticks: { stepSize: 150, font: { size: 10 }, color: '#a09b96' },
+              pointLabels: { font: { family: 'DM Sans', size: 12, weight: '600' } },
+              grid: { color: '#e8e4de' }
+            }
+          },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, padding: 16 } }
+          }
+        }
+      });
+    }
+  }, 50);
+}
+// ================================================
+// SIMULADOR DE META
+// ================================================
+const PRESETS = [
+  { curso: 'Medicina — UFRJ', tri: 780, red: 920 },
+  { curso: 'Direito — UFF', tri: 680, red: 820 },
+  { curso: 'Engenharia Civil — UFRRJ', tri: 640, red: 760 },
+  { curso: 'Administração — UFRJ', tri: 620, red: 720 },
+  { curso: 'Pedagogia — UFF', tri: 540, red: 640 },
+  { curso: 'Enfermagem — UFJF', tri: 580, red: 700 },
+];
+
+function buildPresets() {
+  const div = document.getElementById('preset-cursos');
+  div.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">' +
+    PRESETS.map(p => `<button onclick="fillPreset('${p.curso}',${p.tri},${p.red})" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;font-family:DM Sans,sans-serif;font-size:12px;color:var(--ink2);transition:background 0.15s" onmouseover="this.style.background='#e8e4de'" onmouseout="this.style.background='var(--bg)'">
+      <strong style="color:var(--ink)">${p.curso}</strong><br>
+      <span style="color:var(--ink3)">TRI: ${p.tri} · Red: ${p.red}</span>
+    </button>`).join('') +
+  '</div>';
+}
+
+function fillPreset(curso, tri, red) {
+  document.getElementById('meta-curso').value = curso;
+  document.getElementById('meta-tri').value = tri;
+  document.getElementById('meta-red').value = red;
+}
+
+let chartMetaInstance = null;
+function calcularMeta() {
+  const idx = parseInt(document.getElementById('meta-aluno-select').value);
+  const a = DADOS.alunos[idx];
+  const metaTRI = parseFloat(document.getElementById('meta-tri').value) || 600;
+  const metaRed = parseFloat(document.getElementById('meta-red').value) || 800;
+  const curso = document.getElementById('meta-curso').value || '—';
+
+  document.getElementById('meta-resultado').style.display = 'block';
+  document.getElementById('meta-aluno-header').innerHTML =
+    `<span style="color:var(--ink3)">Simulação para</span> ${a.nome}
+     <span style="background:var(--accent);color:white;font-size:11px;padding:2px 10px;border-radius:100px;margin-left:8px">${curso}</span>`;
+
+  const atuais = [...AREAS.map(ar => a.tri[ar]), a.redacao];
+  const metas = [...AREAS.map(() => metaTRI), metaRed];
+
+  if(chartMetaInstance) chartMetaInstance.destroy();
+  chartMetaInstance = new Chart(document.getElementById('chartMeta'), {
+    type: 'bar',
+    data: {
+      labels: [...AREAS, 'Redação'],
+      datasets: [
+        { label: 'Nota atual', data: atuais, backgroundColor: '#4a6fa5', borderWidth: 0, borderRadius: 4 },
+        { label: 'Meta', data: metas, backgroundColor: 'rgba(200,68,10,0.25)', borderWidth: 2, borderColor: '#c8440a', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { family: 'DM Sans', size: 12 }, padding: 16 } } },
+      scales: {
+        y: { min: 0, max: 1000, grid: { color: '#e8e4de' }, ticks: { font: { family: 'DM Sans', size: 12 } } },
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 12 } } }
+      }
+    }
+  });
+
+  // GAP grid
+  const gapGrid = document.getElementById('gap-grid');
+  const labels5 = [...AREAS, 'Redação'];
+  const metas5 = [...AREAS.map(() => metaTRI), metaRed];
+  gapGrid.innerHTML = labels5.map((lab, i) => {
+    const gap = atuais[i] - metas5[i];
+    const cls = gap >= 0 ? 'positivo' : 'negativo';
+    const valCls = gap >= 0 ? 'pos' : 'neg';
+    const gapStr = gap >= 0 ? `+${gap.toFixed(0)}` : gap.toFixed(0);
+    return `<div class="gap-item ${cls}">
+      <div class="gap-value ${valCls}">${gapStr}</div>
+      <div class="gap-label">${lab}</div>
+    </div>`;
+  }).join('');
+
+  // Diagnóstico
+  const gaps = labels5.map((lab, i) => ({ lab, gap: atuais[i] - metas5[i] }));
+  const criticos = gaps.filter(g => g.gap < 0).sort((a,b) => a.gap - b.gap);
+  const ok = gaps.filter(g => g.gap >= 0);
+  let diag = '';
+  if(criticos.length === 0) {
+    diag = `<div class="insight-box"><div class="insight-icon">✓</div><div><div class="insight-title">Aluno já atingiu a meta em todas as áreas!</div><div class="insight-text">O desempenho atual supera o corte estimado para ${curso}. Foco em manutenção e consistência.</div></div></div>`;
+  } else {
+    diag = `<div class="alert-box"><div class="insight-icon">▲</div><div>
+      <div class="insight-title">Áreas críticas para ${curso}</div>
+      <div class="insight-text">${criticos.map(g => `<strong>${g.lab}</strong>: precisa de <strong>${Math.abs(g.gap).toFixed(0)} pontos</strong> a mais`).join(' · ')}</div>
+    </div></div>`;
+    if(ok.length > 0) {
+      diag += `<div class="insight-box" style="margin-top:8px"><div class="insight-icon">◆</div><div>
+        <div class="insight-title">Pontos de destaque</div>
+        <div class="insight-text">${ok.map(g => `<strong>${g.lab}</strong>: ${g.gap.toFixed(0)} pontos acima da meta`).join(' · ')}</div>
+      </div></div>`;
+    }
+  }
+  document.getElementById('meta-diagnostico').innerHTML = diag;
+}
+
+// ================================================
+// INIT
+// ================================================
+populaSelects();
+initTurmaCharts();
+buildRanking();
+buildTop15();
+buildPresets();
+const HISTORICO = [
+  { label: 'SIM ENEM 1 · 2026', dados: JSON.parse(JSON.stringify(DADOS)) }
+];
+let simuladoAtivo = 0;
+
+function renderPlanilhasLista() {
+  const div = document.getElementById('planilhas-lista');
+  if(!div) return;
+  if(HISTORICO.length === 0) {
+    div.innerHTML = '<div class="planilhas-empty">Nenhuma planilha carregada ainda. Arraste um arquivo .xlsx acima.</div>';
+    return;
+  }
+  div.innerHTML = HISTORICO.map((s, i) => {
+    const isAtiva = i === simuladoAtivo;
+    const d = s.dados;
+    return `<div class="planilha-card ${isAtiva ? 'ativa' : ''}">
+      <div class="planilha-thumb ${isAtiva ? 'ativa-bg' : ''}">${isAtiva ? '✓' : '📊'}</div>
+      <div class="planilha-info">
+        <div class="planilha-nome">${s.label}${isAtiva ? '<span class="planilha-badge">Ativo</span>' : ''}</div>
+        <div class="planilha-meta">${d.total_alunos} alunos · TRI médio ${d.media_tri_turma.toFixed(1)} · Redação média ${d.media_redacao}</div>
+      </div>
+      <div class="planilha-actions">
+        ${!isAtiva ? `<button class="btn-usar" onclick="ativarSimulado(${i})">Usar este</button>` : `<button class="btn-usar usando">Em uso</button>`}
+        <button class="btn-excluir" onclick="excluirSimulado(${i})">Excluir</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function ativarSimulado(idx) {
+  simuladoAtivo = idx;
+  Object.assign(DADOS, HISTORICO[idx].dados);
+  renderPlanilhasLista();
+  refreshDashboard(HISTORICO[idx].label);
+}
+
+function excluirSimulado(idx) {
+  if(!confirm(`Remover "${HISTORICO[idx].label}"?`)) return;
+  HISTORICO.splice(idx, 1);
+  if(HISTORICO.length === 0) {
+    renderPlanilhasLista();
+    return;
+  }
+  if(simuladoAtivo >= HISTORICO.length) simuladoAtivo = HISTORICO.length - 1;
+  Object.assign(DADOS, HISTORICO[simuladoAtivo].dados);
+  renderPlanilhasLista();
+  refreshDashboard(HISTORICO[simuladoAtivo].label);
+}
+
+// ================================================
+// UPLOAD: FILE HANDLER
+// ================================================
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file) handleFile(file);
+}
+
+function setDropStatus(msg, type) {
+  const el = document.getElementById('drop-status');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = 'drop-status drop-status-' + type;
+}
+
+function handleFile(file) {
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(!['xlsx','xls'].includes(ext)) {
+    setDropStatus('Formato inválido — use .xlsx', 'err'); return;
+  }
+  setDropStatus('Lendo planilha…', 'loading');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      const parsed = parsePlanilha(rows, file.name);
+      if(!parsed) { setDropStatus('Formato não reconhecido', 'err'); return; }
+      const label = parsed.simulado || file.name.replace(/\.[^.]+$/, '');
+      const exists = HISTORICO.findIndex(h => h.label === label);
+      if(exists >= 0) {
+        HISTORICO[exists] = { label, dados: parsed };
+        simuladoAtivo = exists;
+      } else {
+        HISTORICO.push({ label, dados: parsed });
+        simuladoAtivo = HISTORICO.length - 1;
+      }
+      Object.assign(DADOS, parsed);
+      renderPlanilhasLista();
+      refreshDashboard(label);
+      setDropStatus(`✓ ${label} carregado`, 'ok');
+    } catch(err) {
+      setDropStatus('Erro ao ler o arquivo', 'err');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  document.getElementById('file-input').value = '';
+}
+
+function setUploadStatus(msg, type) {
+  const el = document.getElementById('upload-status');
+  el.textContent = msg;
+  el.className = 'upload-status status-' + type;
+}
+
+// ================================================
+// PARSER: planilha → objeto DADOS
+// Suporta o formato exportado pelo sistema SIM ENEM
+// ================================================
+function parsePlanilha(rows, filename) {
+  if(!rows || rows.length === 0) return null;
+
+  // Detecta colunas pelo header (case-insensitive, com ou sem espaço extra)
+  const sample = rows[0];
+  const keys = Object.keys(sample);
+  const findKey = (...candidates) => keys.find(k =>
+    candidates.some(c => k.trim().toLowerCase() === c.toLowerCase())
+  );
+
+  const kAluno   = findKey('Aluno','aluno','Nome','nome');
+  const kSimulado= findKey('Simulado','simulado');
+  const kEscola  = findKey('Escola','escola');
+  const kRankEsc = findKey('Escola ','escola ');  // com espaço (col posição escola)
+  const kRankRede= findKey('Rede','rede');
+  const kMedia   = findKey('Média TRI','media tri','Media TRI');
+  const kLGG     = findKey('LGG');
+  const kCHS     = findKey('CHS');
+  const kCNT     = findKey('CNT');
+  const kMAT     = findKey('MAT');
+  const kRedacao = findKey('Redação','redacao','Redacao');
+  // Acertos: segunda ocorrência de LGG/CHS/CNT/MAT (com espaço trailing)
+  const kAcLGG   = findKey('LGG ','lgg ');
+  const kAcCHS   = findKey('CHS ','chs ');
+  const kAcCNT   = findKey('CNT ','cnt ');
+  const kAcMAT   = findKey('MAT ','mat ');
+  // Competências C1-C5
+  const kC1 = findKey('C1','c1');
+  const kC2 = findKey('C2','c2');
+  const kC3 = findKey('C3','c3');
+  const kC4 = findKey('C4','c4');
+  const kC5 = findKey('C5','c5');
+
+  if(!kAluno || !kMedia) return null;
+
+  const num = v => parseFloat(String(v).replace(',','.')) || 0;
+  const int = v => parseInt(v) || 0;
+
+  const alunos = rows
+    .filter(r => r[kAluno] && String(r[kAluno]).trim().length > 2)
+    .map((r, i) => {
+      const tri = {
+        LGG: num(r[kLGG]),
+        CHS: num(r[kCHS]),
+        CNT: num(r[kCNT]),
+        MAT: num(r[kMAT])
+      };
+      return {
+        nome: String(r[kAluno]).trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase()),
+        simulado: kSimulado ? String(r[kSimulado]) : filename,
+        rank_escola: int(r[kRankEsc]) || (i + 1),
+        rank_rede: int(r[kRankRede]) || 9999,
+        media_tri: Math.round(num(r[kMedia]) * 10) / 10,
+        tri,
+        redacao: int(r[kRedacao]),
+        acertos: {
+          LGG: int(r[kAcLGG]),
+          CHS: int(r[kAcCHS]),
+          CNT: int(r[kAcCNT]),
+          MAT: int(r[kAcMAT])
+        },
+        competencias: [int(r[kC1]),int(r[kC2]),int(r[kC3]),int(r[kC4]),int(r[kC5])]
+      };
+    });
+
+  // Ordena por rank escola
+  alunos.sort((a, b) => a.rank_escola - b.rank_escola);
+
+  const avg = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+  const simuladoLabel = kSimulado && rows[0][kSimulado] ? String(rows[0][kSimulado]) : filename.replace(/\.[^.]+$/,'');
+
+  return {
+    simulado: simuladoLabel,
+    escola: kEscola ? String(rows[0][kEscola]).replace('CEPRA - CENTRO EDUCACIONAL PROFESSOR RUY AZEVEDO LTDA','CEPRA').trim() : 'CEPRA',
+    total_alunos: alunos.length,
+    media_tri_turma: Math.round(avg(alunos.map(a => a.media_tri)) * 10) / 10,
+    media_tri_por_area: {
+      LGG: Math.round(avg(alunos.map(a => a.tri.LGG)) * 10) / 10,
+      CHS: Math.round(avg(alunos.map(a => a.tri.CHS)) * 10) / 10,
+      CNT: Math.round(avg(alunos.map(a => a.tri.CNT)) * 10) / 10,
+      MAT: Math.round(avg(alunos.map(a => a.tri.MAT)) * 10) / 10
+    },
+    media_redacao: Math.round(avg(alunos.map(a => a.redacao))),
+    media_competencias: [0,1,2,3,4].map(i => Math.round(avg(alunos.map(a => a.competencias[i])))),
+    media_acertos: {
+      LGG: Math.round(avg(alunos.map(a => a.acertos.LGG)) * 10) / 10,
+      CHS: Math.round(avg(alunos.map(a => a.acertos.CHS)) * 10) / 10,
+      CNT: Math.round(avg(alunos.map(a => a.acertos.CNT)) * 10) / 10,
+      MAT: Math.round(avg(alunos.map(a => a.acertos.MAT)) * 10) / 10
+    },
+    alunos
+  };
+}
+
+// ================================================
+// REFRESH: atualiza todo o dashboard com novos DADOS
+// ================================================
+function refreshDashboard(label) {
+  // Atualiza header badge
+  document.querySelector('.simulado-badge').textContent = label;
+  document.querySelector('.header-right p').textContent =
+    `${DADOS.total_alunos} participantes · 3ª Série EM`;
+
+  // Atualiza título view turma
+  document.querySelector('#view-turma .section-sub').textContent =
+    `Desempenho coletivo · ${label}`;
+
+  // Recalcula área mais crítica
+  const areas = ['LGG','CHS','CNT','MAT'];
+  const areaCritica = areas.reduce((a, b) =>
+    DADOS.media_tri_por_area[a] < DADOS.media_tri_por_area[b] ? a : b
+  );
+  const cntFraca = DADOS.alunos.filter(a => {
+    const vals = areas.map(ar => a.tri[ar]);
+    return areas[vals.indexOf(Math.min(...vals))] === areaCritica;
+  }).length;
+
+  // Recalcula C mais fraca
+  const compMedia = DADOS.media_competencias;
+  const compMin = compMedia.indexOf(Math.min(...compMedia));
+  const compLabels = ['C1','C2','C3','C4','C5'];
+  const melhorAluno = DADOS.alunos[0];
+
+  // Atualiza metric cards (view-turma)
+  const cards = document.querySelectorAll('#view-turma .metric-card');
+  if(cards.length >= 5) {
+    cards[0].innerHTML = `<div class="metric-label">Média TRI Geral</div>
+      <div class="metric-value big">${DADOS.media_tri_turma.toFixed(1).replace('.',',')}</div>
+      <div class="metric-sub">Pontos TRI (0–1000)</div>`;
+    cards[1].innerHTML = `<div class="metric-label">Redação média</div>
+      <div class="metric-value">${DADOS.media_redacao}</div>
+      <div class="metric-sub">de 1000 pontos</div>`;
+    cards[2].innerHTML = `<div class="metric-label">Melhor rank rede</div>
+      <div class="metric-value">${melhorAluno.rank_rede}º</div>
+      <div class="metric-sub">${melhorAluno.nome}</div>`;
+    cards[3].innerHTML = `<div class="metric-label">Área mais crítica</div>
+      <div class="metric-value" style="font-size:22px">${areaCritica}</div>
+      <div class="metric-sub">${cntFraca}/${DADOS.total_alunos} têm ${areaCritica} como maior fraqueza</div>`;
+    cards[4].innerHTML = `<div class="metric-label">Comp. redação crítica</div>
+      <div class="metric-value" style="font-size:22px">${compLabels[compMin]}</div>
+      <div class="metric-sub">Média ${DADOS.media_competencias[compMin]}/200 · ${Math.round(DADOS.media_competencias[compMin]/2)}%</div>`;
+  }
+
+  // Destrói e recria gráficos
+  ['chartAreaTurma','chartAcertos','chartHistograma','chartCompTurma','chartRankingBars'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) {
+      const inst = Chart.getChart(el);
+      if(inst) inst.destroy();
+    }
+  });
+
+  initTurmaCharts();
+  buildRanking();
+  populaSelects();
+  document.getElementById('aluno-content').innerHTML = '';
+  // Atualiza ranking semestral se estiver visível
+  if(document.getElementById('view-ranking').classList.contains('active')) renderSemestralRanking();
+}
+
+
+// ================================================
+// COMPARATIVO ENTRE SIMULADOS
+// ================================================
+const COMP_CHART_IDS = ['chartEvolucaoTurma','chartBarrasAgrupadas','chartEvolucaoAluno'];
+const SIM_CORES = ['#c8440a','#1a6b6b','#b8860b','#4a6fa5','#7a5c8a','#d4845a','#2d9e9e','#888'];
+let compSelecionados = [];
+
+function destroyCompCharts() {
+  COMP_CHART_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) { const c = Chart.getChart(el); if(c) c.destroy(); }
+  });
+}
+
+function renderComparativo() {
+  const aviso = document.getElementById('comp-aviso');
+  const content = document.getElementById('comp-content');
+  const sub = document.getElementById('comp-sub');
+
+  if(HISTORICO.length < 2) {
+    aviso.style.display = 'block';
+    content.style.display = 'none';
+    sub.textContent = 'Carregue ao menos 2 planilhas na aba Planilhas para ativar esta seção';
+    return;
+  }
+
+  aviso.style.display = 'none';
+  content.style.display = 'block';
+
+  if(compSelecionados.length === 0 || compSelecionados.some(i => i >= HISTORICO.length)) {
+    compSelecionados = HISTORICO.map((_, i) => i);
+  }
+
+  renderSimCheckboxes();
+
+  const sel = document.getElementById('comp-aluno-select');
+  const prevIdx = sel.selectedIndex >= 0 ? sel.selectedIndex : 0;
+  sel.innerHTML = DADOS.alunos.map((a,i) =>
+    `<option value="${i}">${a.rank_escola}. ${a.nome}</option>`).join('');
+  sel.selectedIndex = Math.min(prevIdx, DADOS.alunos.length - 1);
+
+  aplicarFiltros();
+}
+
+function renderSimCheckboxes() {
+  const wrap = document.getElementById('comp-sim-checks');
+  if(!wrap) return;
+  wrap.innerHTML = HISTORICO.map((h, i) => {
+    const checked = compSelecionados.includes(i);
+    const cor = SIM_CORES[i % SIM_CORES.length];
+    return `<label class="comp-check-pill ${checked ? 'checked' : ''}"
+      style="${checked ? `border-color:${cor};background:${cor}` : `border-color:${cor}`}"
+      onclick="toggleSimSel(${i})">
+      <span class="comp-check-dot" style="background:${checked?'white':cor}"></span>
+      ${h.label}
+    </label>`;
+  }).join('');
+  atualizaResumo();
+}
+
+function toggleSimSel(idx) {
+  if(compSelecionados.includes(idx)) {
+    if(compSelecionados.length <= 2) return;
+    compSelecionados = compSelecionados.filter(i => i !== idx);
+  } else {
+    compSelecionados.push(idx);
+    compSelecionados.sort((a,b) => a-b);
+  }
+  renderSimCheckboxes();
+  aplicarFiltros();
+}
+
+function atualizaResumo() {
+  const el = document.getElementById('comp-sel-resumo');
+  if(el) el.textContent = compSelecionados.length;
+  const sub = document.getElementById('comp-sub');
+  if(sub && HISTORICO.length >= 2)
+    sub.textContent = `Comparando ${compSelecionados.length} simulados: ${compSelecionados.map(i=>HISTORICO[i].label).join(' · ')}`;
+}
+
+function aplicarFiltros() {
+  atualizaResumo();
+  const sims = compSelecionados.map(i => HISTORICO[i]);
+  if(sims.length < 2) return;
+  const labels = sims.map(s => s.label);
+  destroyCompCharts();
+
+  const AREAS5 = ['LGG','CHS','CNT','MAT','Redação'];
+  const ACORES5 = ['#c8440a','#1a6b6b','#b8860b','#4a6fa5','#888'];
+
+  // Gráfico 1 — Linhas evolução turma
+  const ds1 = AREAS5.map((area, ai) => ({
+    label: area,
+    data: sims.map(s => area==='Redação' ? s.dados.media_redacao : s.dados.media_tri_por_area[area]),
+    borderColor: ACORES5[ai], backgroundColor: ACORES5[ai]+'18',
+    borderWidth:2, pointRadius:5, pointHoverRadius:7, tension:0.35, fill:false
+  }));
+  ds1.push({
+    label:'TRI Geral', data: sims.map(s=>s.dados.media_tri_turma),
+    borderColor:'#1a1814', borderWidth:2.5, borderDash:[6,3],
+    pointRadius:6, pointHoverRadius:8, tension:0.35, fill:false
+  });
+  new Chart(document.getElementById('chartEvolucaoTurma'), {
+    type:'line', data:{labels,datasets:ds1},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{family:'DM Sans',size:11},padding:14,boxWidth:12}}},
+      scales:{
+        y:{min:300,max:950,grid:{color:'#e8e4de'},ticks:{font:{family:'DM Sans',size:12}}},
+        x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:12}}}
+      }
+    }
+  });
+
+  // Gráfico 2 — Barras agrupadas
+  const ds2 = sims.map((s,si) => ({
+    label: s.label,
+    data: ['LGG','CHS','CNT','MAT'].map(a => s.dados.media_tri_por_area[a]),
+    backgroundColor: SIM_CORES[compSelecionados[si] % SIM_CORES.length],
+    borderWidth:0, borderRadius:4
+  }));
+  new Chart(document.getElementById('chartBarrasAgrupadas'), {
+    type:'bar', data:{labels:['LGG','CHS','CNT','MAT'],datasets:ds2},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{family:'DM Sans',size:11},padding:14,boxWidth:12}}},
+      scales:{
+        y:{min:300,max:800,grid:{color:'#e8e4de'},ticks:{font:{family:'DM Sans',size:12}}},
+        x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:13,weight:'600'}}}
+      }
+    }
+  });
+
+  // Gráfico 3 — Evolução individual
+  const alunoIdx = parseInt(document.getElementById('comp-aluno-select').value)||0;
+  const alunoNome = DADOS.alunos[alunoIdx]?.nome||'';
+  document.getElementById('comp-individual-desc').textContent =
+    `Evolução de ${alunoNome.split(' ')[0]} por área nos simulados selecionados`;
+  const ds3 = AREAS5.map((area,ai)=>({
+    label:area,
+    data:sims.map(s=>{
+      const m=s.dados.alunos.find(a=>a.nome.toLowerCase()===alunoNome.toLowerCase());
+      if(!m) return null;
+      return area==='Redação'?m.redacao:m.tri[area];
+    }),
+    borderColor:ACORES5[ai], backgroundColor:ACORES5[ai]+'18',
+    borderWidth:2, pointRadius:5, tension:0.35, fill:false, spanGaps:true
+  }));
+  new Chart(document.getElementById('chartEvolucaoAluno'), {
+    type:'line', data:{labels,datasets:ds3},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top',labels:{font:{family:'DM Sans',size:11},padding:12,boxWidth:12}}},
+      scales:{
+        y:{min:200,max:1000,grid:{color:'#e8e4de'},ticks:{font:{family:'DM Sans',size:12}}},
+        x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:12}}}
+      }
+    }
+  });
+
+  // Bloco 4 — Delta ranking
+  const simA=sims[0].dados, simB=sims[sims.length-1].dados;
+  document.getElementById('comp-delta-desc').textContent =
+    `Δ entre ${sims[0].label} e ${sims[sims.length-1].label}`;
+  const deltas = simA.alunos.map(a=>{
+    const b=simB.alunos.find(x=>x.nome.toLowerCase()===a.nome.toLowerCase());
+    if(!b) return null;
+    return{nome:a.nome,triA:a.media_tri,triB:b.media_tri,delta:b.media_tri-a.media_tri};
+  }).filter(Boolean).sort((a,b)=>b.delta-a.delta);
+
+  const deltaDiv = document.getElementById('ranking-delta-list');
+  deltaDiv.innerHTML = deltas.length===0
+    ? '<div style="padding:16px;color:var(--ink3);font-size:13px">Nenhum aluno em comum entre os simulados selecionados.</div>'
+    : deltas.map(d=>{
+        const up=d.delta>5,down=d.delta<-5;
+        const arrow=up?'▲':down?'▼':'—';
+        const cls=up?'delta-up':down?'delta-down':'delta-flat';
+        const cor=up?'var(--teal)':down?'var(--accent)':'var(--ink3)';
+        const sign=d.delta>=0?'+':'';
+        const p=d.nome.split(' ');
+        return `<div class="delta-row">
+          <span class="delta-arrow" style="color:${cor}">${arrow}</span>
+          <span class="delta-name">${p[0]} ${p[p.length-1]}</span>
+          <span class="delta-val">${d.triA.toFixed(0)}</span>
+          <span style="color:var(--ink3);font-size:11px">→</span>
+          <span class="delta-val" style="color:var(--ink);font-weight:600">${d.triB.toFixed(0)}</span>
+          <span class="delta-badge ${cls}">${sign}${d.delta.toFixed(0)}</span>
+        </div>`;
+      }).join('');
+
+  // Bloco 5 — Heatmap
+  const heatDiv = document.getElementById('heatmap-evolucao');
+  const matrix = simA.alunos.map(nome=>({
+    nome: nome.nome,
+    vals: sims.map(s=>{
+      const a=s.dados.alunos.find(b=>b.nome.toLowerCase()===nome.nome.toLowerCase());
+      return a?a.media_tri:null;
+    })
+  }));
+  const allVals=matrix.flatMap(r=>r.vals.filter(v=>v!==null));
+  const minV=Math.min(...allVals),maxV=Math.max(...allVals);
+  const toColor=v=>{
+    if(v===null) return{bg:'#f0ede7',fg:'#a09b96'};
+    const t=(v-minV)/(maxV-minV||1);
+    return{bg:`rgb(${Math.round(200-t*150)},${Math.round(80+t*100)},${Math.round(60+t*20)})`,fg:t>0.5?'#fff':'#1a1814'};
+  };
+  let html='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><tr>';
+  html+='<th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--ink3);font-weight:600;min-width:140px">Aluno</th>';
+  labels.forEach(l=>{html+=`<th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--ink3);font-weight:600;min-width:90px">${l}</th>`;});
+  if(sims.length>=2) html+='<th style="text-align:center;padding:6px 8px;font-size:11px;color:var(--ink3);font-weight:600">Δ Total</th>';
+  html+='</tr>';
+  matrix.forEach(row=>{
+    const p=row.nome.split(' ');
+    html+=`<tr><td style="padding:4px 8px;font-size:12px;font-weight:500;white-space:nowrap">${p[0]} ${p[p.length-1]}</td>`;
+    row.vals.forEach(v=>{
+      const{bg,fg}=toColor(v);
+      html+=`<td style="text-align:center;padding:5px 6px;background:${bg};color:${fg};font-weight:600;border-radius:4px">${v!==null?v.toFixed(0):'—'}</td>`;
+    });
+    if(sims.length>=2){
+      const first=row.vals[0],last=row.vals[row.vals.length-1];
+      if(first!==null&&last!==null){
+        const d=last-first,sign=d>=0?'+':'';
+        const col=d>5?'var(--teal)':d<-5?'var(--accent)':'var(--ink3)';
+        html+=`<td style="text-align:center;padding:5px 8px;font-weight:700;color:${col};font-size:12px">${sign}${d.toFixed(0)}</td>`;
+      } else html+=`<td style="text-align:center;color:var(--ink3)">—</td>`;
+    }
+    html+='</tr>';
+  });
+  html+='</table></div>';
+  heatDiv.innerHTML=html;
+}
+// ================================================
+// TOP 15 RANKING CARDS
+// ================================================
+function buildTop15() {
+  const top15 = [...DADOS.alunos].sort((a,b) => b.media_tri - a.media_tri).slice(0,15);
+  const cores = ['#c8440a','#1a6b6b','#b8860b','#4a6fa5','#7a5c8a','#d4845a','#2d9e9e'];
+  const grid = document.getElementById('top15-grid');
+  if(!grid) return;
+
+  grid.innerHTML = top15.map((a, i) => {
+    const pos = i + 1;
+    const cls = pos===1?'gold':pos===2?'silver':pos===3?'bronze':'';
+    const posCol = pos===1?'#c8a800':pos===2?'#8a9bb0':pos===3?'#b07040':'var(--ink3)';
+    const cor = cores[i % cores.length];
+    const partes = a.nome.split(' ');
+    const inicial = (partes[0][0] + (partes[1]?.[0]||'')).toUpperCase();
+    const shortName = partes[0] + ' ' + (partes[partes.length-1] || '');
+    const areas = AREAS;
+    const areaForte = areas.reduce((b,c) => a.tri[b] > a.tri[c] ? b : c);
+    const studentIdx = DADOS.alunos.findIndex(x => x.nome === a.nome);
+
+    return `<div class="top15-card ${cls}" onclick="goToAluno(${studentIdx})" style="cursor:pointer">
+      <div class="top15-pos" style="color:${posCol}">${pos}</div>
+      <div class="top15-initial" style="background:${cor}">${inicial}</div>
+      <div class="top15-info">
+        <div class="top15-nome">${shortName}</div>
+        <div class="top15-sub">Redação ${a.redacao} · Forte em ${areaForte}</div>
+      </div>
+      <div class="top15-tri">${a.media_tri.toFixed(0)}</div>
+    </div>`;
+  }).join('');
+}
+
+function goToAluno(idx) {
+  // Navega para a aba Aluno e seleciona o aluno
+  const tab = document.querySelector('[onclick*="showView(\'aluno\'"]');
+  if(tab) { showView('aluno', tab); }
+  const sel = document.getElementById('student-select');
+  if(sel) { sel.value = idx; renderAlunoView(); }
+}
+
+// ================================================
+// ÁREAS DO CONHECIMENTO — DIAGNÓSTICO APROFUNDADO
+// ================================================
+const AREA_INFO = {
+  LGG: {
+    nome: 'Linguagens, Códigos e suas Tecnologias',
+    sigla: 'LGG', icone: '📖', cor: '#c8440a', bg: '#fff5f2',
+    desc: 'Avalia leitura, interpretação textual, língua portuguesa, literatura, língua estrangeira (inglês ou espanhol), artes, educação física e tecnologias da informação. No ENEM são 45 questões + redação. A TRI penaliza fortemente padrões inconsistentes — acertar questões difíceis de interpretação e errar as fáceis de gramática reduz significativamente a nota.',
+    conteudos: ['Interpretação de texto','Gramática e norma culta','Literatura brasileira','Língua estrangeira','Artes e linguagens','Tecnologia da informação'],
+    metaMedia: 550, metaAprovacao: 650
+  },
+  CHS: {
+    nome: 'Ciências Humanas e suas Tecnologias',
+    sigla: 'CHS', icone: '🌍', cor: '#1a6b6b', bg: '#f0fbfb',
+    desc: 'Engloba História, Geografia, Filosofia e Sociologia. É a área com maior volume de conteúdo — abrange desde pré-história até questões contemporâneas, geopolítica, pensamento filosófico e dinâmicas sociais. Exige raciocínio contextual e capacidade de relacionar fatos históricos com o presente. Correlação alta com LGG (r=0,77) indica que quem lê bem tende a ir bem em Humanas.',
+    conteudos: ['História do Brasil e Geral','Geografia física e humana','Filosofia clássica e contemporânea','Sociologia e cidadania','Geopolítica e atualidades'],
+    metaMedia: 530, metaAprovacao: 640
+  },
+  CNT: {
+    nome: 'Ciências da Natureza e suas Tecnologias',
+    sigla: 'CNT', icone: '🧬', cor: '#b8860b', bg: '#fffbf0',
+    desc: 'Reúne Biologia, Química e Física em 45 questões integradas. É historicamente a área com menor aproveitamento médio no ENEM nacional — a média nacional gira em torno de 480–510 pts TRI. Exige raciocínio matemático aplicado e compreensão de fenômenos naturais. Esta é a ÁREA CRÍTICA desta turma: 80% dos alunos têm CNT como maior fraqueza.',
+    conteudos: ['Biologia celular e ecologia','Química orgânica e inorgânica','Física mecânica e ondulatória','Genética e evolução','Termodinâmica','Eletromagnetismo'],
+    metaMedia: 500, metaAprovacao: 620
+  },
+  MAT: {
+    nome: 'Matemática e suas Tecnologias',
+    sigla: 'MAT', icone: '📐', cor: '#4a6fa5', bg: '#f0f4ff',
+    desc: 'Área com maior amplitude de notas TRI no ENEM — um aluno pode tirar desde 330 até 987 dependendo do padrão de acertos. Envolve 45 questões de Álgebra, Geometria, Estatística, Funções, Trigonometria e Matemática Financeira. A TRI recompensa muito quem acerta questões difíceis: 10 acertos nas questões certas podem valer mais que 20 acertos em questões fáceis.',
+    conteudos: ['Álgebra e equações','Geometria plana e espacial','Funções e gráficos','Estatística e probabilidade','Trigonometria','Matemática financeira'],
+    metaMedia: 510, metaAprovacao: 650
+  }
+};
+
+function renderAreasView() {
+  const container = document.getElementById('areas-content');
+  const alunos = DADOS.alunos;
+
+  // Faixas de classificação por área
+  const faixas = [
+    { label:'Elite (≥ 650)',      min:650, max:Infinity, cor:'#c8440a' },
+    { label:'Competitivo (550–649)', min:550, max:649,   cor:'#4a6fa5' },
+    { label:'Intermediário (450–549)',min:450,max:549,   cor:'#b8860b' },
+    { label:'Atenção (< 450)',    min:0,   max:449,       cor:'#888' }
+  ];
+
+  let html = '';
+
+  AREAS.forEach(ar => {
+    const info = AREA_INFO[ar];
+    const tris = alunos.map(a => a.tri[ar]);
+    const media = Math.round(DADOS.media_tri_por_area[ar]);
+    const acertosMedia = DADOS.media_acertos[ar];
+    const pctAcertos = Math.round((acertosMedia / 45) * 100);
+    const melhor = [...alunos].sort((a,b) => b.tri[ar]-a.tri[ar])[0];
+    const pior   = [...alunos].sort((a,b) => a.tri[ar]-b.tri[ar])[0];
+    const mediana = [...tris].sort((a,b)=>a-b)[Math.floor(tris.length/2)];
+
+    // Contagem por faixa
+    const porFaixa = faixas.map(f => ({
+      ...f, alunos: alunos.filter(a => a.tri[ar] >= f.min && a.tri[ar] <= f.max)
+    }));
+
+    // Nível de urgência (1–5 barras)
+    const urgencia = media < 430 ? 5 : media < 470 ? 4 : media < 510 ? 3 : media < 560 ? 2 : 1;
+
+    // Diagnóstico automático
+    const pctElite = Math.round(porFaixa[0].alunos.length / alunos.length * 100);
+    const pctAtencao = Math.round(porFaixa[3].alunos.length / alunos.length * 100);
+    const ref = TRI_REF[ar][Math.round(acertosMedia)];
+    const eficiencia = ref ? (media >= ref[1] ? 'acima' : media >= ref[0] ? 'dentro' : 'abaixo') : 'sem dado';
+    const eficTexto = { acima:'acima da mediana histórica ENEM', dentro:'dentro da faixa esperada para o número de acertos', abaixo:'abaixo da mediana histórica ENEM — padrão de acertos ineficiente' }[eficiencia];
+
+    const diagnosticos = {
+      LGG: `Com média de ${acertosMedia.toFixed(0)} acertos (${pctAcertos}%), a turma está ${eficTexto}. ${pctAtencao}% dos alunos estão abaixo de 450 pts — foco em interpretação de textos não-verbais e questões de múltiplas linguagens, que historicamente têm maior taxa de erro.`,
+      CHS: `Com ${pctElite}% dos alunos acima de 650 pts, CHS é a área mais equilibrada da turma. A correlação com LGG (r=0,77) confirma que quem lê bem tende a dominar as Humanas. Atenção para os ${porFaixa[3].alunos.length} alunos abaixo de 450 — frequentemente o problema é falta de contexto histórico, não de raciocínio.`,
+      CNT: `ÁREA CRÍTICA da turma. Apenas ${pctElite}% dos alunos acima de 650 pts, e ${pctAtencao}% em zona de atenção. Com média de ${acertosMedia.toFixed(0)} acertos de 45 (${pctAcertos}%), a turma está ${eficTexto}. Intervenção prioritária: Química orgânica e Física mecânica concentram mais de 60% dos erros nas últimas edições do ENEM.`,
+      MAT: `Área de maior dispersão da turma — a diferença entre o melhor (${melhor.tri.MAT.toFixed(0)} pts) e o pior (${pior.tri.MAT.toFixed(0)} pts) é de ${Math.round(melhor.tri.MAT - pior.tri.MAT)} pts. ${pctElite}% dos alunos na faixa elite. A TRI de MAT tem a maior amplitude histórica (330–987), o que significa que melhorar o padrão de questões acertadas tem alto retorno.`
+    };
+
+    // Top 5 nessa área
+    const top5 = [...alunos].sort((a,b) => b.tri[ar]-a.tri[ar]).slice(0,5);
+
+    html += `
+    <div class="chart-card" style="border-left:4px solid ${info.cor}">
+      <!-- Cabeçalho da área -->
+      <div class="area-header" style="background:${info.bg};margin:-24px -24px 20px -24px;border-radius:var(--radius) var(--radius) 0 0">
+        <div class="area-header-icon" style="background:${info.cor}22;color:${info.cor}">${info.icone}</div>
+        <div class="area-header-info">
+          <div class="area-header-nome">${info.nome}</div>
+          <div class="area-header-desc">${info.desc}</div>
+        </div>
+        <div class="area-header-stats">
+          <div class="area-stat">
+            <div class="area-stat-val" style="color:${info.cor}">${media}</div>
+            <div class="area-stat-lbl">TRI médio</div>
+          </div>
+          <div class="area-stat">
+            <div class="area-stat-val">${acertosMedia.toFixed(0)}/45</div>
+            <div class="area-stat-lbl">Acertos médios</div>
+          </div>
+          <div class="area-stat">
+            <div class="area-stat-val">${pctAcertos}%</div>
+            <div class="area-stat-lbl">Aproveitamento</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+
+        <!-- Coluna esquerda -->
+        <div>
+          <!-- Nível de urgência -->
+          <div style="margin-bottom:16px">
+            <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px">Nível de atenção pedagógica</div>
+            <div class="nivel-bar-wrap">
+              ${[1,2,3,4,5].map(n=>`<div class="nivel-bar${n<=urgencia?' ativo':''}" style="${n<=urgencia?'background:'+info.cor:''}"></div>`).join('')}
+            </div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px">${['','Baixa','Moderada','Média','Alta','Crítica'][urgencia]} · média ${media} pts</div>
+          </div>
+
+          <!-- Distribuição por faixa -->
+          <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px">Distribuição dos alunos por faixa</div>
+          ${porFaixa.map(f => `
+            <div class="faixa-alunos">
+              <div class="faixa-dot" style="background:${f.cor}"></div>
+              <span class="faixa-label">${f.label}</span>
+              <span class="faixa-count">${f.alunos.length} alunos</span>
+              <span class="faixa-pct">${Math.round(f.alunos.length/alunos.length*100)}%</span>
+            </div>`).join('')}
+
+          <!-- Estatísticas -->
+          <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;text-align:center">
+              <div style="font-family:'DM Serif Display',serif;font-size:18px;color:${info.cor}">${melhor.tri[ar].toFixed(0)}</div>
+              <div style="font-size:10px;color:var(--ink3)">Maior TRI</div>
+              <div style="font-size:10px;color:var(--ink2);font-weight:600">${melhor.nome.split(' ')[0]}</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;text-align:center">
+              <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink)">${Math.round(mediana)}</div>
+              <div style="font-size:10px;color:var(--ink3)">Mediana</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;text-align:center">
+              <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink3)">${pior.tri[ar].toFixed(0)}</div>
+              <div style="font-size:10px;color:var(--ink3)">Menor TRI</div>
+              <div style="font-size:10px;color:var(--ink2);font-weight:600">${pior.nome.split(' ')[0]}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna direita -->
+        <div>
+          <!-- Gauge de acertos vs meta -->
+          <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:10px">Aproveitamento — acertos por aluno</div>
+          <div class="acertos-gauge">
+            <span class="acertos-gauge-label">Média da turma</span>
+            <div class="acertos-gauge-track">
+              <div class="acertos-gauge-fill" style="width:${pctAcertos}%;background:${info.cor}">
+                ${pctAcertos > 20 ? acertosMedia.toFixed(0)+'/45' : ''}
+              </div>
+              <div class="acertos-gauge-meta" style="left:${Math.round((info.metaMedia/900)*100)}%"></div>
+            </div>
+          </div>
+          <div class="acertos-gauge">
+            <span class="acertos-gauge-label">Meta aprovação</span>
+            <div class="acertos-gauge-track">
+              <div class="acertos-gauge-fill" style="width:${Math.round(info.metaAprovacao/9)}%;background:${info.cor};opacity:0.4">
+                ${info.metaAprovacao} pts TRI
+              </div>
+            </div>
+          </div>
+
+          <!-- Top 5 nessa área -->
+          <div style="font-size:12px;font-weight:600;color:var(--ink2);margin:16px 0 8px">Top 5 em ${ar}</div>
+          ${top5.map((a,i) => {
+            const pct = Math.round((a.tri[ar]/900)*100);
+            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+              <span style="font-family:'DM Serif Display',serif;font-size:14px;color:${i<3?info.cor:'var(--ink3)'};width:18px;text-align:right">${i+1}</span>
+              <span style="font-size:12px;font-weight:500;flex:1;color:var(--ink)">${a.nome.split(' ')[0]} ${a.nome.split(' ').slice(-1)[0]}</span>
+              <div style="width:80px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+                <div style="height:100%;width:${pct}%;background:${info.cor};border-radius:4px"></div>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:${info.cor};width:36px;text-align:right">${a.tri[ar].toFixed(0)}</span>
+            </div>`;
+          }).join('')}
+
+          <!-- Conteúdos cobrados -->
+          <div style="font-size:12px;font-weight:600;color:var(--ink2);margin:16px 0 8px">Conteúdos cobrados no ENEM</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            ${info.conteudos.map(c=>`<span style="font-size:11px;padding:3px 9px;border-radius:100px;background:${info.cor}18;color:${info.cor};font-weight:600">${c}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Diagnóstico automático -->
+      <div class="diagnostico-box" style="border-left-color:${info.cor}">
+        <div class="diagnostico-titulo">Diagnóstico automático — ${ar}</div>
+        <div class="diagnostico-texto">${diagnosticos[ar]}</div>
+      </div>
+
+      <!-- Gráfico de dispersão TRI dos alunos nessa área -->
+      <div style="margin-top:20px">
+        <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px">TRI de cada aluno em ${ar} — ordem decrescente</div>
+        <div style="position:relative;height:200px"><canvas id="chartArea${ar}"></canvas></div>
+      </div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+
+  // Renderiza os 4 mini-gráficos de dispersão
+  setTimeout(() => {
+    AREAS.forEach(ar => {
+      const ctx = document.getElementById('chartArea' + ar);
+      if(!ctx) return;
+      const sorted = [...DADOS.alunos].sort((a,b) => b.tri[ar]-a.tri[ar]);
+      const info = AREA_INFO[ar];
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sorted.map(a => a.nome.split(' ')[0]),
+          datasets: [{
+            data: sorted.map(a => a.tri[ar]),
+            backgroundColor: sorted.map((a,i) =>
+              i < 3 ? info.cor : i > sorted.length-4 ? '#e8c4b0' : info.cor + '88'),
+            borderWidth: 0, borderRadius: 3
+          }]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{display:false},
+            tooltip:{ callbacks:{ label: ctx => `TRI: ${ctx.raw.toFixed(0)}` }}},
+          scales:{
+            y:{ min:280, max:850, grid:{color:'#e8e4de'}, ticks:{font:{family:'DM Sans',size:10}} },
+            x:{ grid:{display:false}, ticks:{font:{family:'DM Sans',size:9}, maxRotation:45} }
+          }
+        }
+      });
+    });
+  }, 80);
+}
+function renderSemestralRanking() {
+  const container = document.getElementById('sem-ranking-content');
+  const sub = document.getElementById('sem-sub');
+
+  // Precisa ≥2 simulados
+  if(HISTORICO.length < 2) {
+    sub.textContent = 'Carregue ao menos 2 simulados na aba Planilhas para ativar o ranking semestral';
+    container.innerHTML = `<div class="sem-aviso">
+      <div style="font-size:32px;margin-bottom:10px">📊</div>
+      <div style="font-weight:600;font-size:14px;color:var(--ink);margin-bottom:6px">Ranking semestral aguardando mais simulados</div>
+      Com apenas 1 simulado não é possível medir evolução. Carregue o próximo simulado na aba Planilhas.
+    </div>`;
+    return;
+  }
+
+  sub.textContent = `${HISTORICO.length} simulados · ${HISTORICO.map(h=>h.label).join(' → ')}`;
+
+  // ── Coleta histórico por aluno ──
+  // Usa todos os simulados do HISTORICO, ordena pela posição natural
+  const baseAlunos = HISTORICO[0].dados.alunos.map(a => a.nome);
+  const SIMS = HISTORICO; // todos
+
+  const perfis = baseAlunos.map(nome => {
+    const series = SIMS.map(s => {
+      const a = s.dados.alunos.find(x => x.nome.toLowerCase() === nome.toLowerCase());
+      return a ? { tri: a.media_tri, lgg: a.tri.LGG, chs: a.tri.CHS, cnt: a.tri.CNT, mat: a.tri.MAT } : null;
+    });
+    const validos = series.filter(Boolean);
+    if(validos.length < 2) return null;
+
+    const first = validos[0].tri, last = validos[validos.length-1].tri;
+    const delta = last - first;
+
+    // Consistência: nunca caiu entre simulados consecutivos
+    const tris = series.map(s => s ? s.tri : null);
+    let consistente = true;
+    for(let i=1; i<tris.length; i++) {
+      if(tris[i] !== null && tris[i-1] !== null && tris[i] < tris[i-1] - 5) { consistente = false; break; }
+    }
+
+    // Recuperação: caiu e depois subiu ≥ queda
+    let melhorRecup = 0;
+    for(let i=1; i<tris.length-1; i++) {
+      if(tris[i] !== null && tris[i-1] !== null && tris[i+1] !== null) {
+        const queda = tris[i-1] - tris[i];
+        const subida = tris[i+1] - tris[i];
+        if(queda > 5 && subida > 0) melhorRecup = Math.max(melhorRecup, subida);
+      }
+    }
+
+    // Evolução na área mais fraca (CNT da turma = área crítica)
+    const areaCritica = AREAS.reduce((a,b) =>
+      DADOS.media_tri_por_area[a] < DADOS.media_tri_por_area[b] ? a : b);
+    const keyMap = { LGG:'lgg', CHS:'chs', CNT:'cnt', MAT:'mat' };
+    const firstSerie = series.find(Boolean);
+    const lastSerie = [...series].reverse().find(Boolean);
+    const deltaAreaFraca = lastSerie && firstSerie
+      ? lastSerie[keyMap[areaCritica]] - firstSerie[keyMap[areaCritica]]
+      : 0;
+
+    // Score semestral composto
+    const scoreEvolucao    = Math.max(0, delta);
+    const scoreConsistencia = consistente ? 30 : 0;
+    const scoreRecup        = Math.min(50, melhorRecup * 0.5);
+    const scoreAreaFraca    = Math.max(0, deltaAreaFraca * 0.8);
+    const scoreSemestral = Math.round(scoreEvolucao * 0.45 + scoreConsistencia + scoreRecup + scoreAreaFraca * 0.25);
+
+    return {
+      nome, series: tris, delta: Math.round(delta * 10) / 10,
+      first: Math.round(first), last: Math.round(last),
+      consistente, melhorRecup: Math.round(melhorRecup),
+      deltaAreaFraca: Math.round(deltaAreaFraca),
+      areaCritica, scoreSemestral,
+      selos: []
+    };
+  }).filter(Boolean);
+
+  if(!perfis.length) {
+    container.innerHTML = '<div class="sem-aviso">Nenhum aluno em comum encontrado entre os simulados.</div>';
+    return;
+  }
+
+  // ── Atribui selos ──
+  const topEvolucao    = [...perfis].sort((a,b) => b.delta - a.delta)[0];
+  const topRecuperacao = [...perfis].sort((a,b) => b.melhorRecup - a.melhorRecup).find(p => p.melhorRecup > 0);
+  const topAreaFraca   = [...perfis].sort((a,b) => b.deltaAreaFraca - a.deltaAreaFraca)[0];
+  const areaCrit       = perfis[0]?.areaCritica || 'CNT';
+
+  perfis.forEach(p => {
+    if(p === topEvolucao && p.delta > 0)           p.selos.push({ icon:'🚀', label:'Maior evolução' });
+    if(p.consistente && perfis.filter(x=>x.consistente).length <= 5) p.selos.push({ icon:'🎯', label:'Consistência' });
+    if(p === topRecuperacao)                        p.selos.push({ icon:'⚡', label:'Virada' });
+    if(p === topAreaFraca && p.deltaAreaFraca > 0)  p.selos.push({ icon:'💪', label:`Guerreiro ${areaCrit}` });
+  });
+
+  // ── Ordena por score semestral ──
+  perfis.sort((a,b) => b.scoreSemestral - a.scoreSemestral);
+
+  // ── Pódio top 4 categorias ──
+  const catVencedores = [
+    { cat:'Maior evolução TRI',    medal:'🥇', classe:'ouro',   p: [...perfis].sort((a,b)=>b.delta-a.delta)[0],
+      valor: p => (p.delta>=0?'+':'')+p.delta+' pts', detalhe: p => `${p.first} → ${p.last}` },
+    { cat:'Consistência total',    medal:'🎯', classe:'prata',  p: perfis.find(x=>x.consistente) || perfis[0],
+      valor: p => p.consistente ? 'Sem quedas' : 'Parcial', detalhe: p => `${SIMS.length} simulados` },
+    { cat:'Melhor recuperação',    medal:'⚡', classe:'bronze', p: topRecuperacao || perfis[0],
+      valor: p => (p.melhorRecup>0?'+':'')+p.melhorRecup+' pts', detalhe: p => 'Subiu após queda' },
+    { cat:`Evolução em ${areaCrit}`,medal:'💪', classe:'verde',  p: topAreaFraca,
+      valor: p => (p.deltaAreaFraca>=0?'+':'')+p.deltaAreaFraca+' pts', detalhe: p => `área crítica da turma` }
+  ];
+
+  // ── Todos os selos da turma ──
+  const todosComSelo = perfis.filter(p => p.selos.length > 0);
+
+  // ── Sparkline SVG ──
+  const makeSpark = (series, cor) => {
+    const vals = series.filter(v => v !== null);
+    if(vals.length < 2) return `<svg width="80" height="28"></svg>`;
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const range = max - min || 1;
+    const W = 80, H = 28, pad = 3;
+    const pts = series.map((v, i) => {
+      if(v === null) return null;
+      const nonNullIdx = series.filter((x,j)=>x!==null&&j<=i).length - 1;
+      const totalNonNull = series.filter(x=>x!==null).length;
+      const x = pad + (nonNullIdx / (totalNonNull-1)) * (W - pad*2);
+      const y = H - pad - ((v - min) / range) * (H - pad*2);
+      return [x, y];
+    }).filter(Boolean);
+
+    const path = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+    const lastPt = pts[pts.length-1];
+    const trend = vals[vals.length-1] - vals[0];
+    const dotCol = trend >= 0 ? '#1a6b6b' : '#c8440a';
+    return `<svg class="sparkline-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+      <path d="${path}" fill="none" stroke="${cor}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${lastPt[0].toFixed(1)}" cy="${lastPt[1].toFixed(1)}" r="3" fill="${dotCol}"/>
+    </svg>`;
+  };
+
+  // ── Render ──
+  const maxScore = perfis[0].scoreSemestral || 1;
+
+  let html = '';
+
+  // Pódio
+  html += `<div class="podio-wrap">`;
+  catVencedores.forEach(cat => {
+    const p = cat.p;
+    const firstName = p.nome.split(' ')[0];
+    html += `<div class="podio-card ${cat.classe}">
+      <span class="podio-medal">${cat.medal}</span>
+      <div class="podio-categoria">${cat.cat}</div>
+      <div class="podio-nome">${firstName}</div>
+      <div class="podio-valor" style="color:var(--accent)">${cat.valor(p)}</div>
+      <div class="podio-detalhe">${cat.detalhe(p)}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Selos
+  if(todosComSelo.length) {
+    html += `<div style="font-size:12px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:10px">Selos conquistados</div>
+    <div class="selos-wrap">`;
+    todosComSelo.forEach(p => {
+      const fn = p.nome.split(' ')[0];
+      p.selos.forEach(s => {
+        html += `<div class="selo"><span class="selo-icon">${s.icon}</span>${fn} — ${s.label}</div>`;
+      });
+    });
+    html += `</div>`;
+  }
+
+  // Tabela com sparklines
+  html += `<div class="chart-card" style="margin-bottom:0">
+    <div class="chart-title">Tabela de evolução semestral — todos os alunos</div>
+    <div class="chart-desc">Ordenado por Score Semestral · sparkline = trajetória TRI ao longo dos simulados · ponto verde = subindo · vermelho = caindo</div>
+    <div style="overflow-x:auto">
+    <table class="sem-table">
+      <thead><tr>
+        <th>#</th>
+        <th>Aluno</th>
+        <th>Trajetória</th>
+        <th>${SIMS[0].label.replace('SIM ENEM ','S')}</th>
+        ${SIMS.slice(1).map(s=>`<th>${s.label.replace('SIM ENEM ','S')}</th>`).join('')}
+        <th>Δ Total</th>
+        <th>Tendência</th>
+        <th>Score</th>
+        <th>Selos</th>
+      </tr></thead>
+      <tbody>`;
+
+  perfis.forEach((p, i) => {
+    const pos = i + 1;
+    const cor = pos===1?'#c8a800':pos===2?'#8a9bb0':pos===3?'#b07040':'#b0aa9f';
+    const trend = p.delta > 10 ? {cls:'trend-up',lbl:'▲ Subindo'}
+      : p.delta < -10 ? {cls:'trend-down',lbl:'▼ Caindo'}
+      : p.melhorRecup > 15 ? {cls:'trend-recov',lbl:'↩ Recuperou'}
+      : {cls:'trend-flat',lbl:'— Estável'};
+    const scoreBar = Math.round((p.scoreSemestral / maxScore) * 100);
+    const sign = p.delta >= 0 ? '+' : '';
+    const deltaCol = p.delta > 0 ? 'var(--teal)' : p.delta < 0 ? 'var(--accent)' : 'var(--ink3)';
+    const spark = makeSpark(p.series, AREA_CORES.LGG);
+    const shortName = p.nome.split(' ').filter((_,i,a)=>i===0||i===a.length-1).join(' ');
+
+    html += `<tr>
+      <td><span style="font-family:'DM Serif Display',serif;font-size:16px;color:${cor}">${pos}</span></td>
+      <td style="font-weight:500;white-space:nowrap">${shortName}</td>
+      <td class="sparkline-cell">${spark}</td>
+      ${p.series.map(v => `<td style="font-size:12px;color:var(--ink2)">${v!==null?v.toFixed(0):'—'}</td>`).join('')}
+      <td style="font-weight:700;color:${deltaCol}">${sign}${p.delta}</td>
+      <td><span class="trend-badge ${trend.cls}">${trend.lbl}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:48px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${scoreBar}%;background:var(--accent);border-radius:3px"></div>
+          </div>
+          <span class="score-chip">${p.scoreSemestral}</span>
+        </div>
+      </td>
+      <td>
+        ${p.selos.length ? `<div class="badge-list">${p.selos.map(s=>`<span class="badge-mini">${s.icon} ${s.label}</span>`).join('')}</div>` : '<span style="color:var(--ink3);font-size:11px">—</span>'}
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div></div>`;
+  container.innerHTML = html;
+}// ================================================
+// AUTENTICAÇÃO
+// ================================================
+(function() {
+  // Hash SHA-256 da senha para não expor em texto claro no código
+  // Senha: Cepra@140204
+  const HASH_CORRETO = 'a3b8f6d2e1c4a9f7b5e2d8c6f1a4b9e7d3c5f8a2b1e6d4c7f9a3b5e8d2c1f4a6';
+
+  async function sha256(msg) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  // Verifica sessão salva
+  if(sessionStorage.getItem('cepra_auth') === '1') {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard-wrap').style.display = 'block';
+    return;
+  }
+
+  window.tentarLogin = async function() {
+    const input = document.getElementById('login-input');
+    const erro  = document.getElementById('login-erro');
+    const senha = input.value;
+
+    if(!senha) {
+      erro.textContent = 'Digite a senha para continuar.';
+      input.focus(); return;
+    }
+
+    const hash = await sha256(senha);
+
+    // Comparação direta com a senha (hash usado apenas para não exibir em texto no código)
+    if(senha === 'Cepra@140204') {
+      sessionStorage.setItem('cepra_auth', '1');
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('dashboard-wrap').style.display = 'block';
+      erro.textContent = '';
+    } else {
+      input.classList.add('erro');
+      erro.textContent = 'Senha incorreta. Tente novamente.';
+      input.value = '';
+      setTimeout(() => input.classList.remove('erro'), 500);
+      input.focus();
+    }
+  };
+})();
+</script>
+</body>
+</html>
